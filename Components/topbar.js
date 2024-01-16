@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableWithoutFeedback } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -7,14 +7,36 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function TopBar() {
   const navigation = useNavigation();
+  const [username, setUsername] = useState('');
+
+  useEffect(() => {
+    // Fetch and set the username from AsyncStorage
+    const fetchUsername = async () => {
+      try {
+        const storedUsername = await AsyncStorage.getItem('username');
+        if (storedUsername) {
+          setUsername(storedUsername);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchUsername();
+  }, []);
 
   const handleProfilePress = () => {
     navigation.navigate('ProfileTab');
   };
 
+  const handleChatWithAdmin = () => {
+    // Navigate to the chat screen with the admin
+    navigation.navigate('ChatScreen', { username: 'admin@g.com' }); // Replace 'admin' with the admin's username
+  };
+
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem('token'); // Corrected key to 'token'
+      await AsyncStorage.removeItem('token');
       navigation.navigate('Login');
     } catch (error) {
       console.error(error);
@@ -26,11 +48,14 @@ function TopBar() {
       <TouchableWithoutFeedback onPress={handleProfilePress}>
         <View style={styles.profileBar}>
           <Avatar.Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }} size={50} />
-          <Text style={styles.profileName}>Sai Raj</Text>
+          <Text style={styles.profileName}>{username}</Text>
         </View>
       </TouchableWithoutFeedback>
       <View style={styles.topBarIcons}>
-        <Icon name="email" size={30} color="gray" style={styles.icon} />
+        {/* Change the onPress handler to navigate to the chat screen with the admin */}
+        <TouchableWithoutFeedback onPress={handleChatWithAdmin}>
+          <Icon name="email" size={30} color="gray" style={styles.icon} />
+        </TouchableWithoutFeedback>
         <TouchableWithoutFeedback onPress={handleLogout}>
           <Icon name="logout" size={30} color="gray" style={styles.icon} />
         </TouchableWithoutFeedback>

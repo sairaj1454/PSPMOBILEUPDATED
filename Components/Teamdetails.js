@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ImageBackground } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Card, Title, Paragraph, ActivityIndicator as PaperActivityIndicator } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import { FontAwesome } from '@expo/vector-icons'; // Make sure to install the necessary package
 
 import { API_BASE_URL } from './config';
 import TopBar from './topbar';
 
-const TeamD = () => {
+
+const TeamD = ({ navigation }) => {
   const [assignedTeamLead, setAssignedTeamLead] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,45 +53,72 @@ const TeamD = () => {
 
     fetchUserProfile();
   }, []);
+  const handleUserClick = (username) => {
+    navigation.navigate('ChatScreen', { username });
+  };
+  const handleChatWithTeamLead = () => {
+    if (assignedTeamLead) {
+      navigation.navigate('ChatScreen', { username: assignedTeamLead.username });
+    }
+  };
 
   return (
     <>
     <TopBar></TopBar>
-    <View style={styles.container}>
-    
-      <View style={styles.centeredContent}>
-        <Card style={styles.mainCard}>
-          <Card.Content>
-            <Title style={styles.title}>Team Details</Title>
-            {loading ? (
-              <PaperActivityIndicator animating={true} size="large" color="#0000ff" />
-            ) : assignedTeamLead ? (
-              <Card style={styles.leadCard}>
-                <Card.Content>
-                  <Paragraph style={styles.subtitle}>Assigned Team Lead:</Paragraph>
-                  <Paragraph>Username: {assignedTeamLead.username}</Paragraph>
-                </Card.Content>
-              </Card>
-            ) : (
-              <Paragraph>No assigned team lead found.</Paragraph>
-            )}
-
-            {teamMembers.length > 0 && (
-              <View style={styles.teamMembersContainer}>
-                <Paragraph style={styles.subtitle}>Team Members:</Paragraph>
-                {teamMembers.map((member) => (
-                  <Card key={member._id} style={styles.memberCard}>
-                    <Card.Content>
-                      <Paragraph>{member.username}</Paragraph>
-                    </Card.Content>
+      <View style={styles.container}>
+        <View style={styles.centeredContent}>
+            <ImageBackground
+            source={{ uri: 'https://www.vhv.rs/file/max/27/272099_background-png-images-download.jpg' }} // Replace with the actual URL
+            style={styles.backgroundImage}
+            />
+          <Card style={styles.mainCard}>
+            <Card.Content>
+              <Title style={styles.title}>Team Details</Title>
+              {loading ? (
+                <PaperActivityIndicator animating={true} size="large" color="#0000ff" />
+              ) : assignedTeamLead ? (
+                <Card style={styles.leadCard}>
+                  <Card.Content>
+                    <Paragraph style={styles.subtitle}>Assigned Team Lead:</Paragraph>
+                    <Paragraph>Username: {assignedTeamLead.username}</Paragraph>
+                    <TouchableOpacity
+                      style={styles.chatButton}
+                      onPress={handleChatWithTeamLead}
+                    >
+                      <FontAwesome name="comment" size={24} color="black" />
+                      <Text style={styles.buttonText}>Chat with Team Lead</Text>
+                    </TouchableOpacity>
+                  </Card.Content>
                   </Card>
-                ))}
-              </View>
-            )}
-          </Card.Content>
-        </Card>
+              ) : (
+                <Paragraph>No assigned team lead found.</Paragraph>
+              )}
+              
+
+              {teamMembers.length > 0 && (
+               
+                <View style={styles.teamMembersContainer}>
+                     <Card style={styles.subcard}>
+                  <Paragraph style={styles.subtitle}>Team Members:</Paragraph>
+                  {teamMembers.map((member) => (
+                    <TouchableOpacity
+                      key={member._id}
+                      style={styles.memberCard}
+                      onPress={() => handleUserClick(member.username)}
+                    >
+                      <FontAwesome name="comment" size={24} color="black" />
+                      <Text style={styles.buttonText}>{member.username}</Text>
+                    </TouchableOpacity>
+                  ))}
+                  </Card>
+                </View>
+              )}
+            </Card.Content>
+            
+          </Card>
+        
+        </View>
       </View>
-    </View>
     </>
   );
 };
@@ -99,6 +129,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  backgroundImage: {
+    flex: 1,
+    resizeMode: 'cover', // or 'stretch'
+    justifyContent: 'center',
+  },
   centeredContent: {
     width: '100%',
     paddingHorizontal: 16,
@@ -107,6 +142,14 @@ const styles = StyleSheet.create({
   mainCard: {
     width: '100%',
     padding: 16,
+    elevation:20,
+    backgroundColor:"white",
+  },
+  subcard: {
+    width: '100%',
+    padding: 16,
+    elevation:20,
+    backgroundColor:"white",
   },
   title: {
     fontSize: 20,
@@ -121,13 +164,34 @@ const styles = StyleSheet.create({
   leadCard: {
     marginBottom: 16,
     width: '100%',
+    elevation:20,
+    backgroundColor:"white",
   },
   teamMembersContainer: {
     width: '100%',
+    elevation:30,
+  },
+  chatButton: {
+    marginTop: 8,
+    backgroundColor: 'white', // Customize the color as needed
+    padding: 10,
+    alignItems: 'center',
+    flexDirection: 'row',
+    elevation:10, // Align icon and text horizontally
+  },
+  buttonText: {
+    color: 'black',
+    fontWeight: 'bold',
+    marginLeft: 8, // Add some spacing between the icon and text
   },
   memberCard: {
     marginBottom: 8,
     width: '100%',
+    backgroundColor: 'white', // Customize the color as needed
+    padding: 10,
+    alignItems: 'center',
+    flexDirection: 'row',
+    elevation:10, // Align icon and text horizontally
   },
 });
 

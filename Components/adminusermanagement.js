@@ -1,10 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, Alert ,TouchableOpacity} from 'react-native';
-import { TextInput as PaperTextInput, Button as PaperButton, Card as PaperCard } from 'react-native-paper';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+  TextInput
+} from 'react-native';
+import {
+  TextInput as PaperTextInput,
+  Button as PaperButton,
+  Card as PaperCard,
+} from 'react-native-paper';
 import axios from 'axios';
+import RNPickerSelect from "react-native-picker-select";
+
 import { API_BASE_URL } from './config';
 import { AirbnbRating } from 'react-native-ratings';
 import TopBar from './topbar';
+import { useNavigation } from '@react-navigation/native'; // Import the necessary module
+import Icon from 'react-native-vector-icons/FontAwesome'; // You can choose an icon from any available icon library
 
 const UserDetailsScreen = ({ route }) => {
   const { userDetails } = route.params;
@@ -14,7 +30,12 @@ const UserDetailsScreen = ({ route }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [assignedTeamLead, setAssignedTeamLead] = useState('');
   const [isEditingTeamLead, setIsEditingTeamLead] = useState(false);
-
+  const [selectedUserRole, setSelectedUserRole] = useState('');
+  const navigation = useNavigation(); // Get the navigation object
+  const handleChatButtonPress = () => {
+    // Navigate to the chat screen with the user's details
+    navigation.navigate('ChatScreen', { username: userDetails.username });
+  };
   useEffect(() => {
     fetchSurveyData();
     fetchAssignedTeamLeadDetails();
@@ -22,7 +43,9 @@ const UserDetailsScreen = ({ route }) => {
 
   const fetchAssignedTeamLeadDetails = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/userdetails/${userDetails.username}/assignedteamlead`);
+      const response = await axios.get(
+        `${API_BASE_URL}/userdetails/${userDetails.username}/assignedteamlead`
+      );
       setAssignedTeamLead(response.data);
     } catch (error) {
       console.error('Error fetching assigned team lead details:', error);
@@ -31,7 +54,9 @@ const UserDetailsScreen = ({ route }) => {
 
   const fetchSurveyData = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/userdetails/${userDetails.username}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/userdetails/${userDetails.username}`
+      );
       setSurveyData(response.data.surveyResponses);
     } catch (error) {
       console.error('Error fetching survey data:', error);
@@ -71,13 +96,15 @@ const UserDetailsScreen = ({ route }) => {
 
   const handleSearchTeamLeads = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/teamleads?search=${searchQuery}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/teamleads?search=${searchQuery}`
+      );
       setAvailableTeamLeads(response.data);
     } catch (error) {
       console.error('Error fetching team leads:', error);
     }
   };
-  
+
   const handleAssignTeamLead = async () => {
     try {
       await axios.post(`${API_BASE_URL}/assignteamlead`, {
@@ -92,9 +119,38 @@ const UserDetailsScreen = ({ route }) => {
       Alert.alert('Success', 'Team Lead assigned successfully');
     } catch (error) {
       console.error('Error assigning team lead:', error);
-      Alert.alert('Error', 'Failed to assign Team Lead. Please try again.');
+      Alert.alert(
+        'Error',
+        'Failed to assign Team Lead. Please try again.'
+      );
     }
   };
+
+  const handleUpdateUserRole = async () => {
+    try {
+      // Check if the selectedUserRole is empty
+      if (!selectedUserRole) {
+        Alert.alert('Error', 'Please select a role before updating.');
+        return;
+      }
+  
+      // Make a request to the backend to update the user's role
+      await axios.post(`${API_BASE_URL}/admin/updateuserrole`, {
+        username: userDetails.username,
+        role: selectedUserRole,
+      });
+  
+      // Optionally, you can fetch updated user details after the role update
+      // fetchUserDetails(); // Implement the function to fetch user details
+  
+      Alert.alert('Success', 'User role updated successfully');
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      Alert.alert('Error', 'Failed to update user role. Please try again.');
+    }
+  };
+  
+ 
 
   const renderSurveyItem = ({ item }) => (
     <PaperCard style={styles.surveyCard}>
@@ -150,6 +206,12 @@ const UserDetailsScreen = ({ route }) => {
               <Text style={styles.labelText}>Email:</Text>
               <Text style={styles.detailText}>{item.email}</Text>
             </View>
+           
+            <View style={styles.tableRow}>
+            <Text style={styles.labelText}>Role:</Text>
+            <Text style={styles.detailText}>{item.role}</Text>
+          </View>
+          
             <View style={styles.tableRow}>
               <Text style={styles.labelText}>Assigned Team Lead:</Text>
               <Text style={styles.detailText}>{assignedTeamLead.teamLeadUsername}</Text>
@@ -158,7 +220,38 @@ const UserDetailsScreen = ({ route }) => {
                   Edit
                 </PaperButton>
               )}
+              
             </View>
+          
+            <View style={styles.tableRow}>
+                <Text style={styles.labelText}> Select Role:</Text>
+                
+                
+              </View>
+             
+          <RNPickerSelect
+           value={selectedUserRole}
+                 onValueChange={(value) => setSelectedUserRole(value)}
+                 items={[
+                     { label: "teamlead", value: "teamlead" },
+                     { label: "user", value: "user" },
+                     
+                 ]}
+             />
+
+              <PaperButton onPress={handleUpdateUserRole} mode="contained" style={styles.button}>
+                Update User Role
+              </PaperButton>
+              <PaperButton
+              onPress={handleChatButtonPress}
+              mode="contained"
+              style={styles.button}
+              icon={({ size, color }) => (
+                <Icon name="comments" size={size} color={color} />
+              )}
+            >
+              Start Chat
+            </PaperButton>
             {isEditingTeamLead && (
               <>
                 <PaperTextInput
@@ -191,7 +284,9 @@ const UserDetailsScreen = ({ route }) => {
           </Text>
         </TouchableOpacity>
       </PaperCard>
+      
     )}
+    
   />
 
                 <PaperButton onPress={handleAssignTeamLead} mode="contained" style={styles.button}>
@@ -225,7 +320,9 @@ const UserDetailsScreen = ({ route }) => {
       )}
     />
   );
+  
 };
+
 
 const styles = StyleSheet.create({
   container: {

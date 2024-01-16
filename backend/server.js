@@ -1,4 +1,5 @@
 //'mongodb://127.0.0.1:27017/PCPMOBILE'
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -34,7 +35,7 @@ app.use(bodyParser.json());
 
 // Enable CORS for the React Native app
 app.use(cors({
-  origin: 'exp://192.168.0.101:8081',
+  origin: 'exp://10.113.34.46:8081',
 }));
 
 // MongoDB connection
@@ -124,6 +125,56 @@ const suggestionSchema = new mongoose.Schema({
 });
 
 const Suggestion = mongoose.model('Suggestion', suggestionSchema);
+// Add this route to fetch chat messages
+const chatMessageSchema = new mongoose.Schema({
+  sender: String,
+  receiver: String,
+  message: String,
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+const ChatMessage = mongoose.model('ChatMessage', chatMessageSchema);
+
+app.get('/chat/:receiverUsername', authenticateUser, async (req, res) => {
+  try {
+    const senderUsername = req.user.username;
+    const receiverUsername = req.params.receiverUsername;
+
+    // Fetch chat messages between sender and receiver
+    const messages = await ChatMessage.find({
+      $or: [
+        { sender: senderUsername, receiver: receiverUsername },
+        { sender: receiverUsername, receiver: senderUsername },
+      ],
+    }).sort({ createdAt: 'asc' });
+
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error('Error fetching chat messages:', error.message);
+    res.status(500).json({ message: 'Error fetching chat messages' });
+  }
+});
+
+// Add this route to send a chat message
+app.post('/chat', authenticateUser, async (req, res) => {
+  try {
+    const { receiverUsername, message } = req.body;
+    const senderUsername = req.user.username;
+
+    // Save the chat message
+    const newMessage = new ChatMessage({ sender: senderUsername, receiver: receiverUsername, message });
+    await newMessage.save();
+
+    res.status(201).json({ message: 'Chat message sent successfully' });
+  } catch (error) {
+    console.error('Error sending chat message:', error.message);
+    res.status(500).json({ message: 'Error sending chat message' });
+  }
+});
+
 app.post('/surveyresponse', async (req, res) => {
   try {
     const { userId, surveyTitle, responses } = req.body;
@@ -163,8 +214,7 @@ app.post('/surveyresponse', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error saving survey response' });
-  }
-});
+  } });
 app.post('/submit-suggestion', async (req, res) => {
   try {
     const { content } = req.body;
@@ -410,6 +460,28 @@ app.get('/admin/surveys/:surveyId/responses', async (req, res) => {
   } catch (error) {
     console.error('Error fetching survey responses:', error.message);
     res.status(500).json({ message: 'Error fetching survey responses' });
+  }
+});
+// Add this route to update the role of a user
+app.post('/admin/updateuserrole', async (req, res) => {
+  try {
+    const { username, role } = req.body;
+
+    // Find the user by their username
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update the user's role
+    user.role = role;
+    await user.save();
+
+    res.status(200).json({ message: 'User role updated successfully' });
+  } catch (error) {
+    console.error('Error updating user role:', error.message);
+    res.status(500).json({ message: 'Error updating user role' });
   }
 });
 
@@ -813,7 +885,7 @@ app.post('/auth/login', async (req, res) => {
       },
       secretKey,
       {
-        expiresIn: '1h',
+        expiresIn: '500h',
       }
     );
 

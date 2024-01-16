@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert 
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import Modal from 'react-native-modal';
 import { API_BASE_URL } from './config';
 
 const SurveyPage = ({ route }) => {
   const { survey } = route.params;
   const [selectedOptions, setSelectedOptions] = useState({});
+  const [isModalVisible, setModalVisible] = useState(false); // State for modal visibility
   const navigation = useNavigation(); // Initialize navigation
 
   const handleOptionSelect = (questionIndex, option) => {
@@ -46,22 +48,19 @@ const SurveyPage = ({ route }) => {
 
       console.log(response.data.message);
 
-      // Show Alert and navigate back to Home page after user clicks "OK"
-      Alert.alert(
-        'Submission',
-        'Survey submitted successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('HomeTab'), // Navigate to Home page on "OK"
-          },
-        ]
-      );
+      // Show the modal
+      setModalVisible(true);
 
     } catch (error) {
       console.error('Error submitting survey:', error.message);
       Alert.alert('Error', 'Error submitting survey response');
     }
+  };
+
+  const handleModalClose = () => {
+    // Close the modal and navigate back to Home page
+    setModalVisible(false);
+    navigation.navigate('HomeTab');
   };
 
   return (
@@ -97,6 +96,16 @@ const SurveyPage = ({ route }) => {
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
         <Text style={styles.submitButtonText}>Submit</Text>
       </TouchableOpacity>
+
+      {/* Modal */}
+      <Modal isVisible={isModalVisible}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalText}>Thanks for submitting your survey!</Text>
+          <TouchableOpacity style={styles.modalButton} onPress={handleModalClose}>
+            <Text style={styles.modalButtonText}>OK</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -157,6 +166,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   submitButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+
+  // Modal styles
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalButton: {
+    backgroundColor: 'maroon',
+    padding: 15,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  modalButtonText: {
     color: 'white',
     fontSize: 16,
   },

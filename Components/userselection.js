@@ -6,6 +6,7 @@ import TopBar from './topbar';
 import axios from 'axios';
 import { Alert } from 'react-native';
 import { API_BASE_URL } from './config';
+import { Modal, ActivityIndicator } from 'react-native';
 
 const SelectUsersPage = ({ route, navigation }) => {
   const { surveyTitle, questions } = route.params;
@@ -14,7 +15,8 @@ const SelectUsersPage = ({ route, navigation }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchText, setSearchText] = useState('');
   const usersPerPage = 5; // You can adjust the number of users per page as needed
-
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [isUploadSuccess, setUploadSuccess] = useState(false);
   useEffect(() => {
     axios.get(`${API_BASE_URL}/users`)
       .then(response => setAllUsers(response.data))
@@ -36,24 +38,39 @@ const SelectUsersPage = ({ route, navigation }) => {
       Alert.alert('Error', 'Please select at least one user to upload the survey.');
       return;
     }
-
+  
     try {
       const surveyData = {
         title: surveyTitle,
         questions,
         accessibleUsers: selectedUsers.map((user) => user._id),
       };
-
+  
+      // Show loading indicator or perform any other UI updates indicating the survey is being uploaded
+      // ...
+  
       const response = await axios.post(`${API_BASE_URL}/surveys`, surveyData);
-
+  
+      // Hide loading indicator or revert UI updates
+  
       console.log(response.data.message);
-
-      // After successful upload, navigate back to the CreateSurveyPage
-      navigation.navigate('createsurvey');
+  
+      // Set the upload success state to true
+      setUploadSuccess(true);
+  
+      // Show the modal for a short duration (e.g., 3 seconds)
+      setModalVisible(true);
+      setTimeout(() => {
+        setModalVisible(false);
+        navigation.navigate('createsurvey');
+      }, 3000);
+  
     } catch (error) {
+      // Handle errors, show error messages, or revert UI updates
       console.error('Error uploading survey:', error.message);
     }
   };
+  
 
   const renderUserItem = (user) => {
     const isSelected = selectedUsers.some((selectedUser) => selectedUser._id === user._id);
@@ -143,6 +160,25 @@ const SelectUsersPage = ({ route, navigation }) => {
           <Text style={styles.backButtonText}>Back to Create Survey</Text>
         </TouchableOpacity>
       </ScrollView>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {isUploadSuccess ? (
+              <>
+                <Text style={styles.modalText}>Survey Uploaded Successfully!</Text>
+                <ActivityIndicator size="large" color="maroon" />
+              </>
+            ) : (
+              <Text style={styles.modalText}>Uploading Survey...</Text>
+            )}
+          </View>
+        </View>
+      </Modal>
     </>
   );
 };
@@ -155,6 +191,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 10,
+  },modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalText: {
+    fontSize: 18,
+    marginBottom: 10,
   },
   selectedUserText: {
     marginTop: 5,

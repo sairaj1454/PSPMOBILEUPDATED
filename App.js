@@ -20,6 +20,7 @@ import SavedSurveysPage from './Components/savedsurveys';
 import ChangePassword from './Components/changepassword';
 import SPage from './Components/getSuggestations';
 import TeamD from './Components/Teamdetails';
+import ChatScreen from './Components/chat';
 const Stack = createStackNavigator();
 
 const App = () => {
@@ -62,6 +63,8 @@ const App = () => {
     header: () => null,}}/>
 
 <Stack.Screen name='TeamDetails' component={TeamD}  options={{
+    header: () => null,}}/>
+        <Stack.Screen name="ChatScreen" component={ChatScreen}  options={{
     header: () => null,}}/>
 
       </Stack.Navigator>

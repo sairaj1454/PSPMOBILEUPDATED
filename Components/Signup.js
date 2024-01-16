@@ -109,9 +109,7 @@ const SignupScreen = () => {
             <Text style={[styles.signupText, { opacity: pressed ? 0.6 : 1 }]}>Create</Text>
           )}
         </Pressable>
-        <Pressable onPress={handleTeamleadSignups}>
-          <Text style={styles.link}>Create TeamLead</Text>
-        </Pressable>
+     
       </View>
     </>
   );

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { Card, Title, Paragraph, Button } from 'react-native-paper';
+import { Card, Title, Paragraph, Button, IconButton } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
@@ -31,6 +31,10 @@ const TeamLeadPannel = () => {
     navigation.navigate('LUserDetail', { username: userDetails.username });
   };
 
+  const handleChatWithUser = (username) => {
+    navigation.navigate('ChatScreen', { username });
+  };
+
   const renderUserItem = ({ item }) => (
     <Card style={styles.card} onPress={() => handleManageUser(item)}>
       <Card.Content>
@@ -38,6 +42,12 @@ const TeamLeadPannel = () => {
         <Paragraph>Additional user details or description can go here.</Paragraph>
       </Card.Content>
       <Card.Actions style={styles.cardActions}>
+        <IconButton
+          icon="chat" // You can use the appropriate chat icon
+          color="blue"
+          size={24}
+          onPress={() => handleChatWithUser(item.username)}
+        />
         <Button
           style={styles.manageButton}
           onPress={() => handleManageUser(item)}
@@ -77,13 +87,17 @@ const styles = StyleSheet.create({
   },
   card: {
     marginVertical: 10,
+    flexDirection: 'row', // Make sure it's row-oriented
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   usernameText: {
     fontSize: 18,
     marginBottom: 5,
   },
   cardActions: {
-    justifyContent: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   manageButton: {
     backgroundColor: 'maroon',
