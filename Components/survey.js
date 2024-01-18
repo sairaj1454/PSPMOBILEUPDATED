@@ -5,12 +5,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import Modal from 'react-native-modal';
 import { API_BASE_URL } from './config';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const SurveyPage = ({ route }) => {
   const { survey } = route.params;
   const [selectedOptions, setSelectedOptions] = useState({});
-  const [isModalVisible, setModalVisible] = useState(false); // State for modal visibility
-  const navigation = useNavigation(); // Initialize navigation
+  const [isModalVisible, setModalVisible] = useState(false);
+  const navigation = useNavigation();
 
   const handleOptionSelect = (questionIndex, option) => {
     setSelectedOptions((prevOptions) => ({
@@ -28,15 +29,27 @@ const SurveyPage = ({ route }) => {
 
   const handleSubmit = async () => {
     try {
-      // Retrieve userId from AsyncStorage
+      // Check if all questions are answered
+      const unansweredQuestions = survey.questions.filter((question, index) => {
+        return (
+          question.type === 'mcq' &&
+          !selectedOptions.hasOwnProperty(index) &&
+          !question.options.some((option) => selectedOptions[index] === option)
+        ) || (question.type !== 'mcq' && !selectedOptions.hasOwnProperty(index));
+      });
+  
+      if (unansweredQuestions.length > 0) {
+        Alert.alert('Error', 'Please answer all questions before submitting the survey.');
+        return;
+      }
+  
       const userId = await AsyncStorage.getItem('userId');
-
+  
       if (!userId) {
-        // Handle the case where userId is not available
         Alert.alert('Error', 'User ID not found. Please login again.');
         return;
       }
-
+  
       const response = await axios.post(`${API_BASE_URL}/surveyresponse`, {
         userId: userId,
         surveyTitle: survey.title,
@@ -45,20 +58,18 @@ const SurveyPage = ({ route }) => {
           answer: answer,
         })),
       });
-
+  
       console.log(response.data.message);
-
-      // Show the modal
+  
       setModalVisible(true);
-
     } catch (error) {
       console.error('Error submitting survey:', error.message);
       Alert.alert('Error', 'Error submitting survey response');
     }
   };
+  
 
   const handleModalClose = () => {
-    // Close the modal and navigate back to Home page
     setModalVisible(false);
     navigation.navigate('HomeTab');
   };
@@ -80,6 +91,9 @@ const SurveyPage = ({ route }) => {
                 ]}
                 onPress={() => handleOptionSelect(questionIndex, option)}
               >
+                {selectedOptions[questionIndex] === option && (
+                  <Icon name="check" size={20} color="green" style={styles.checkIcon} />
+                )}
                 <Text style={styles.optionText}>{option}</Text>
               </TouchableOpacity>
             ))
@@ -97,7 +111,6 @@ const SurveyPage = ({ route }) => {
         <Text style={styles.submitButtonText}>Submit</Text>
       </TouchableOpacity>
 
-      {/* Modal */}
       <Modal isVisible={isModalVisible}>
         <View style={styles.modalContainer}>
           <Text style={styles.modalText}>Thanks for submitting your survey!</Text>
@@ -151,9 +164,14 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     marginVertical: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   selectedOption: {
-    backgroundColor: 'green',
+    backgroundColor: '#e0e0e0',
+  },
+  checkIcon: {
+    marginRight: 10,
   },
   optionText: {
     fontSize: 14,
@@ -170,7 +188,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
-  // Modal styles
   modalContainer: {
     backgroundColor: 'white',
     padding: 20,

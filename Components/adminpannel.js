@@ -42,9 +42,10 @@ const AdminPanel = () => {
     const filtered = allUsers.filter((user) =>
       user.username.toLowerCase().includes(text.toLowerCase())
     );
+    console.log('Filtered users:', filtered);
     setFilteredUsers(filtered);
   };
-
+  
   const renderUserItem = ({ item }) => (
     <TouchableOpacity
       style={styles.userItemContainer}
@@ -93,13 +94,13 @@ const AdminPanel = () => {
           />
         </View>
 
-        {searchQuery.length === 0 && (
+        
           <FlatList
             data={currentUsers}
             keyExtractor={(item) => item._id}
             renderItem={renderUserItem}
           />
-        )}
+        
         {renderUserDetails()}
 
         {/* Pagination buttons */}

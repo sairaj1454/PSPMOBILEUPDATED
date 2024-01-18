@@ -35,11 +35,14 @@ app.use(bodyParser.json());
 
 // Enable CORS for the React Native app
 app.use(cors({
-  origin: 'exp://10.113.34.46:8081',
+  origin: 'exp://10.113.34.90:8081',
 }));
 
 // MongoDB connection
-mongoose.connect('mongodb://127.0.0.1:27017/PCPMOBILE', { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect('mongodb+srv://sairajdeep1454:PakN18tPqCtGLBGZ@pcpmobile.4mkwmgi.mongodb.net/', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 const db = mongoose.connection;
 
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
@@ -47,9 +50,10 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'sairajdeep1454@gmail.com', // Your Gmail email address
-    pass: 'jdoyyiqzrupcspkc', // Your Gmail password or an app-specific password
+    pass: 'eewx azan baey rsxc', // Your Gmail password or an app-specific password
   },
 });
+
 // Define a user schema
 // Define a user schema
 const UserSchema = new mongoose.Schema({
@@ -721,13 +725,14 @@ app.post('/auth/signup', async (req, res) => {
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
-        console.error('Error sending confirmation email:', error);
-        res.status(500).json({ message: 'Error sending confirmation email' });
+        console.error('Error sending email:', error);
+        res.status(500).json({ message: 'Error sending email' });
       } else {
-        console.log('Confirmation email sent:', info.response);
-        res.status(201).json({ message: 'User created successfully', userId: user._id });
+        console.log('Email sent:', info.response);
+        res.status(200).json({ message: 'User Created  successfully' });
       }
     });
+    
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error creating user' });

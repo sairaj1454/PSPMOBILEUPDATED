@@ -14,9 +14,11 @@ const SelectUsersPage = ({ route, navigation }) => {
   const [allUsers, setAllUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchText, setSearchText] = useState('');
-  const usersPerPage = 5; // You can adjust the number of users per page as needed
+  const usersPerPage = 5;
   const [isModalVisible, setModalVisible] = useState(false);
   const [isUploadSuccess, setUploadSuccess] = useState(false);
+  const [selectAll, setSelectAll] = useState(false);
+
   useEffect(() => {
     axios.get(`${API_BASE_URL}/users`)
       .then(response => setAllUsers(response.data))
@@ -33,6 +35,12 @@ const SelectUsersPage = ({ route, navigation }) => {
     }
   };
 
+  const toggleSelectAll = () => {
+    const usersToSelect = allUsers.filter((user) => user.passwordChangeCount > 0);
+    
+    setSelectAll(!selectAll);
+    setSelectedUsers(selectAll ? [] : usersToSelect);
+  };
   const handleUploadSurvey = async () => {
     if (selectedUsers.length === 0) {
       Alert.alert('Error', 'Please select at least one user to upload the survey.');
@@ -46,45 +54,37 @@ const SelectUsersPage = ({ route, navigation }) => {
         accessibleUsers: selectedUsers.map((user) => user._id),
       };
   
-      // Show loading indicator or perform any other UI updates indicating the survey is being uploaded
-      // ...
-  
+      setModalVisible(true);
+
       const response = await axios.post(`${API_BASE_URL}/surveys`, surveyData);
   
-      // Hide loading indicator or revert UI updates
-  
+      setModalVisible(false);
+
       console.log(response.data.message);
   
-      // Set the upload success state to true
       setUploadSuccess(true);
-  
-      // Show the modal for a short duration (e.g., 3 seconds)
-      setModalVisible(true);
+
       setTimeout(() => {
-        setModalVisible(false);
+        setUploadSuccess(false);
         navigation.navigate('createsurvey');
       }, 3000);
   
     } catch (error) {
-      // Handle errors, show error messages, or revert UI updates
       console.error('Error uploading survey:', error.message);
+      setModalVisible(false);
     }
   };
-  
 
   const renderUserItem = (user) => {
     const isSelected = selectedUsers.some((selectedUser) => selectedUser._id === user._id);
     const textColor = user.passwordChangeCount === 0 ? 'red' : 'green';
 
-    // Calculate the difference in milliseconds
     const passwordChangedRecently = Date.now() - new Date(user.passwordChangedAt) < 7 * 24 * 60 * 60 * 1000;
 
     const handleUserSelection = () => {
       if (user.passwordChangeCount === 0) {
-        // User is red, don't allow selection
         Alert.alert('Error', 'Cannot assign survey to a user who has not changed the password.');
       } else {
-        // User is green or any other color, proceed with selection
         toggleUserSelection(user);
       }
     };
@@ -116,14 +116,19 @@ const SelectUsersPage = ({ route, navigation }) => {
     <>
       <TopBar />
       <ScrollView style={styles.container}>
-      
-      <SearchBar
+        <SearchBar
           placeholder="Search users..."
           onChangeText={(text) => setSearchText(text)}
           value={searchText}
           inputContainerStyle={styles.searchInputContainer}
           inputStyle={styles.searchInput}
           containerStyle={styles.searchBarContainer}
+        />
+        <CheckBox
+          title="Select All"
+          checked={selectAll}
+          onPress={toggleSelectAll}
+          containerStyle={styles.selectAllCheckbox}
         />
         <Text style={styles.titleText}>Selected Users:</Text>
         {selectedUsers.map((user) => (
@@ -191,25 +196,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 10,
-  },modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  modalText: {
-    fontSize: 18,
-    marginBottom: 10,
   },
   selectedUserText: {
     marginTop: 5,
-    color: 'green', // You can use a different color for selected users
+    color: 'green',
   },
   customUploadButton: {
     backgroundColor: 'maroon',
@@ -243,21 +233,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   searchBarContainer: {
-    backgroundColor: 'transparent', // Set the background color of the SearchBar container
-    borderBottomColor: 'transparent', // Hide the bottom border
-    borderTopColor: 'transparent', // Hide the top border
-    paddingHorizontal: 0, // Adjust horizontal padding as needed
+    backgroundColor: 'transparent',
+    borderBottomColor: 'transparent',
+    borderTopColor: 'transparent',
+    paddingHorizontal: 0,
   },
   searchInputContainer: {
-    backgroundColor: 'lightgray', // Set the background color of the input container
+    backgroundColor: 'lightgray',
     borderRadius: 10,
-     // Add border radius to the input container
   },
   searchInput: {
-    color: 'black', // Set the text color of the input
+    color: 'black',
   },
   backButton: {
-    backgroundColor: 'maroon', // Customize the background color of the back button
+    backgroundColor: 'maroon',
     padding: 15,
     borderRadius: 10,
     marginTop: 10,
@@ -267,6 +256,28 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 18,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalText: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  selectAllCheckbox: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    margin: 0,
+    padding: 0,
   },
 });
 

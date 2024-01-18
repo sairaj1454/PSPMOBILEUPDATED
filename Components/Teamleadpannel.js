@@ -36,27 +36,29 @@ const TeamLeadPannel = () => {
   };
 
   const renderUserItem = ({ item }) => (
-    <Card style={styles.card} onPress={() => handleManageUser(item)}>
-      <Card.Content>
-        <Title style={styles.usernameText}>{item.username}</Title>
-        <Paragraph>Additional user details or description can go here.</Paragraph>
-      </Card.Content>
-      <Card.Actions style={styles.cardActions}>
-        <IconButton
-          icon="chat" // You can use the appropriate chat icon
-          color="blue"
-          size={24}
-          onPress={() => handleChatWithUser(item.username)}
-        />
-        <Button
-          style={styles.manageButton}
-          onPress={() => handleManageUser(item)}
-          mode="contained"
-        >
-          Manage
-        </Button>
-      </Card.Actions>
-    </Card>
+    <View style={styles.cardContainer}>
+      <Card style={styles.card}>
+        <Card.Content>
+          <Title style={styles.usernameText}>{item.username}</Title>
+          <Paragraph>Additional user details or description can go here.</Paragraph>
+        </Card.Content>
+        <Card.Actions style={styles.cardActions}>
+          <IconButton
+            icon="chat" // You can use the appropriate chat icon
+            color="blue"
+            size={24}
+            onPress={() => handleChatWithUser(item.username)}
+          />
+          <Button
+            style={styles.manageButton}
+            onPress={() => handleManageUser(item)}
+            mode="contained"
+          >
+            Manage
+          </Button>
+        </Card.Actions>
+      </Card>
+    </View>
   );
 
   return (
@@ -86,6 +88,11 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   card: {
+    marginVertical: 10,
+    flexDirection: 'row', // Make sure it's row-oriented
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },cardContainer: {
     marginVertical: 10,
     flexDirection: 'row', // Make sure it's row-oriented
     justifyContent: 'space-between',

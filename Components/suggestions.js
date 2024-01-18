@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import Modal from 'react-native-modal';
 import TopBar from './topbar';
 import { API_BASE_URL } from './config';
 
 const SuggestionsPage = () => {
   const [suggestion, setSuggestion] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isModalVisible, setModalVisible] = useState(false);
 
   const handleSuggestionChange = (text) => {
     setSuggestion(text);
@@ -14,7 +16,7 @@ const SuggestionsPage = () => {
   const handleSubmitSuggestion = async () => {
     try {
       setSubmitting(true);
-  
+
       // Make a POST request to the backend with the suggestion content
       const response = await fetch(`${API_BASE_URL}/submit-suggestion`, {
         method: 'POST',
@@ -23,12 +25,12 @@ const SuggestionsPage = () => {
         },
         body: JSON.stringify({ content: suggestion }),
       });
-  
+
       if (response.ok) {
         // Suggestion submitted successfully, clear the text input
         setSuggestion('');
-        // Show an alert indicating successful submission
-        alert('Suggestion submitted successfully');
+        // Show the success modal
+        setModalVisible(true);
       } else {
         console.error('Error submitting suggestion');
       }
@@ -38,8 +40,11 @@ const SuggestionsPage = () => {
       setSubmitting(false);
     }
   };
-  
-  
+
+  const closeModal = () => {
+    setModalVisible(false);
+  };
+
   return (
     <>
       <TopBar />
@@ -51,6 +56,7 @@ const SuggestionsPage = () => {
             placeholder="Your suggestion..."
             onChangeText={handleSuggestionChange}
             multiline={true}
+            value={suggestion}
           />
           <TouchableOpacity
             style={[styles.customButton, submitting && styles.disabledButton]}
@@ -65,10 +71,19 @@ const SuggestionsPage = () => {
         <Text style={styles.suggestionText}>
           We value your suggestions. Please feel free to share your thoughts with us.
         </Text>
+        <Modal isVisible={isModalVisible} onBackdropPress={closeModal}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalText}>Suggestion successfully submitted!</Text>
+            <TouchableOpacity onPress={closeModal} style={styles.modalButton}>
+              <Text style={styles.modalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
       </View>
     </>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -115,6 +130,27 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 16,
     textAlign: 'center',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalText: {
+    fontSize: 18,
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: 'maroon',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

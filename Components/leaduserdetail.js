@@ -1,6 +1,6 @@
 // ... (existing imports)
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView,Alert } from 'react-native';
 import { Button, Card, Title, Paragraph, IconButton } from 'react-native-paper'; // Importing React Native Paper components
 import axios from 'axios';
 import { API_BASE_URL } from './config';
@@ -57,17 +57,32 @@ const LUserDetail = ({ route }) => {
 
   const deleteReview = async (surveyTitle) => {
     try {
-      await axios.post(`${API_BASE_URL}/deletereview`, {
-        username: userDetails.username,
-        surveyTitle,
-      });
-
-      fetchUserDetails();
+      Alert.alert(
+        'Delete Review',
+        'Are you sure you want to delete this review?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Delete',
+            onPress: async () => {
+              await axios.post(`${API_BASE_URL}/deletereview`, {
+                username: userDetails.username,
+                surveyTitle,
+              });
+  
+              fetchUserDetails();
+            },
+          },
+        ],
+        { cancelable: true }
+      );
     } catch (error) {
       console.error('Error deleting review:', error);
     }
   };
-
   if (!userDetails) {
     return <Text>Loading...</Text>;
   }
@@ -91,79 +106,100 @@ const LUserDetail = ({ route }) => {
           </View>
         </Card.Content>
       </Card>
-
+  
       <Text style={styles.heading}>Survey Responses:</Text>
-      {Object.values(userDetails.surveyResponses).map((response, index) => (
-        <Card key={index} style={styles.responseContainer}>
-          <Card.Content>
-            <Title>{response.surveyTitle}</Title>
-
-            {/* Displaying question and answer without DataTable */}
-            {response.responses.map((answer, answerIndex) => (
-              <View key={answerIndex} style={styles.questionAnswerContainer}>
-                <Text style={styles.questionText}>{answer.question}</Text>
-                <Text style={styles.answerText}>{answer.answer}</Text>
-              </View>
-            ))}
-
-            <Title>Reviews:</Title>
-            {response.reviews.map((review, reviewIndex) => (
-              <View key={reviewIndex} style={styles.reviewContainer}>
-                <Paragraph>
-                  Review: {review.reviewText} {'\n'} 
-                  Rating: {review.rating}
-                </Paragraph>
+  
+      {userDetails.surveyResponses.length === 0 ? (
+        <Text style={styles.noSurveyResponseText}>No survey responses available ⚠️.</Text>
+      ) : (
+        userDetails.surveyResponses.map((response, index) => (
+          <Card key={index} style={styles.responseContainer}>
+            <Card.Content>
+              <Title>{response.surveyTitle}</Title>
+  
+              {/* Displaying question and answer without DataTable */}
+              {response.responses.map((answer, answerIndex) => (
+                <View key={answerIndex} style={styles.questionAnswerContainer}>
+                  <Text style={styles.questionText}>{answer.question}</Text>
+                  <Text style={styles.answerText}>{answer.answer}</Text>
+                </View>
+              ))}
+  
+              <Title>Reviews:</Title>
+              {response.reviews.map((review, reviewIndex) => (
+                <View key={reviewIndex} style={styles.reviewContainer}>
+                  <Paragraph>
+                    Review: {review.reviewText} {'\n'} 
+                    Rating: {review.rating}
+                  </Paragraph>
+                  <Rating
+                    type="star"
+                    ratingCount={5}
+                    imageSize={20}
+                    startingValue={review.rating}
+                    readonly
+                  />
+                  <IconButton
+                    icon="delete"
+                    color="red"
+                    size={20}
+                    onPress={() => deleteReview(response.surveyTitle)}
+                  />
+                </View>
+              ))}
+  
+              {!hasUserSubmittedReview(response.surveyTitle) && (
+                <>
+                  <TextInput
+                    placeholder="Enter your review"
+                    value={reviewText}
+                    onChangeText={(text) => setReviewText(text)}
+                  />
                 <Rating
-                  type="star"
-                  ratingCount={5}
-                  imageSize={20}
-                  startingValue={review.rating}
-                  readonly
-                />
-                <IconButton
-                  icon="delete"
-                  color="red"
-                  size={20}
-                  onPress={() => deleteReview(response.surveyTitle)}
-                />
-              </View>
-            ))}
+  type="star"
+  ratingCount={5}
+  imageSize={30}
+  startingValue={rating}
+  onFinishRating={(selectedRating) => setRating(selectedRating)}
+  style={{
+    paddingVertical: 10,
+    backgroundColor: 'lightgray', // Change background color
+    borderRadius: 10, // Add border radius
+  }}
+  ratingColor="gold" // Change color of selected stars
+  ratingBackgroundColor="white" // Change color of unselected stars
+  tintColor="lightgray" // Change color of the entire component
+/>
 
-            {!hasUserSubmittedReview(response.surveyTitle) && (
-              <>
-                <TextInput
-                  placeholder="Enter your review"
-                  value={reviewText}
-                  onChangeText={(text) => setReviewText(text)}
-                />
-                <Rating
-                  type="star"
-                  ratingCount={5}
-                  imageSize={30}
-                  startingValue={rating}
-                  onFinishRating={(selectedRating) => setRating(selectedRating)}
-                  style={{ paddingVertical: 10 }}
-                />
-                <Button
-                  mode="contained"
-                  onPress={() => submitReview(response.surveyTitle, reviewText, rating)}
-                  style={styles.maroonButton}
-                >
-                  Submit Review
-                </Button>
-              </>
-            )}
-          </Card.Content>
-        </Card>
-      ))}
+                  <Button
+                    mode="contained"
+                    onPress={() => submitReview(response.surveyTitle, reviewText, rating)}
+                    style={styles.maroonButton}
+                  >
+                    Submit Review
+                  </Button>
+                </>
+              )}
+            </Card.Content>
+          </Card>
+        ))
+      )}
     </ScrollView>
   );
+  
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+  },
+  noSurveyResponseText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 10,
+    fontWeight:'bold',
+    color:'red',
   },
   card: {
     marginBottom: 20,

@@ -22,11 +22,19 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "PSP",
-      "permissions": ["CAMERA", "RECORD_AUDIO"]
+      "package": "com.sairaj1454.pcpmobile",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "51663369-1f07-4737-b3fb-fea0079460fc"
+      }
     }
   }
 }

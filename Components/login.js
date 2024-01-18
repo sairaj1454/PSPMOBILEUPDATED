@@ -26,30 +26,29 @@ const LoginScreen = () => {
       navigation.navigate('Home');
     }
   };
-
   const handleLogin = async () => {
     if (!identifier || !password) {
       setSnackbarVisible(true);
     } else {
       setLoading(true);
-
+  
       try {
         const response = await axios.post(`${API_BASE_URL}/auth/login`, {
           username: identifier,
           employeeId: identifier,
           password,
         });
-
+  
         if (response.status === 200) {
           const { role, username, userId, token } = response.data;
-
+  
           await AsyncStorage.setItem('token', token);
           await AsyncStorage.setItem('userId', userId);
           await AsyncStorage.setItem('role', role);
           await AsyncStorage.setItem('username', username);
-
+  
           console.log(`Logged in as ${username} with ID ${userId} and role ${role}`);
-
+  
           if (role === 'admin') {
             navigation.navigate('Adminhome');
           } else if (role === 'user') {
@@ -57,6 +56,10 @@ const LoginScreen = () => {
           } else if (role === 'teamlead') {
             navigation.navigate('TeamLeadHome');
           }
+  
+          // Clear the entered details in TextInput
+          setIdentifier('');
+          setPassword('');
         }
       } catch (error) {
         console.error(error);
@@ -66,6 +69,7 @@ const LoginScreen = () => {
       }
     }
   };
+  
 
   const handleSignup = () => {
     navigation.navigate('adminsignup');
@@ -88,21 +92,23 @@ const LoginScreen = () => {
       <View style={styles.inputView}>
         <Icon name="user" size={20} color="maroon" style={styles.icon} />
         <TextInput
-          style={styles.inputText}
-          placeholder="Username/Employee ID"
-          placeholderTextColor="maroon"
-          onChangeText={(text) => setIdentifier(text)}
-        />
+  style={styles.inputText}
+  placeholder="Username/Employee ID"
+  placeholderTextColor="maroon"
+  onChangeText={(text) => setIdentifier(text)}
+  value={identifier} 
+/>
       </View>
       <View style={styles.inputView}>
         <Icon name="lock" size={20} color="maroon" style={styles.icon} />
         <TextInput
-          style={styles.inputText}
-          placeholder="Password"
-          placeholderTextColor="maroon"
-          secureTextEntry={!showPassword}
-          onChangeText={(text) => setPassword(text)}
-        />
+  style={styles.inputText}
+  placeholder="Password"
+  placeholderTextColor="maroon"
+  secureTextEntry={!showPassword}
+  onChangeText={(text) => setPassword(text)}
+  value={password} 
+/>
         <TouchableWithoutFeedback onPress={() => setShowPassword(!showPassword)}>
           <Icon
             name={showPassword ? 'eye-slash' : 'eye'}
@@ -121,9 +127,7 @@ const LoginScreen = () => {
         <Text style={styles.loginText}>LOGIN</Text>
       </Pressable>
 
-      <Text style={styles.link} onPress={handleSignup}>
-        Don't have an account? Sign up here
-      </Text>
+      
 
       <Snackbar
         visible={snackbarVisible}

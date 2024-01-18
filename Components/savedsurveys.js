@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import axios from 'axios';
 import { API_BASE_URL } from './config';
 import TopBar from './topbar';
 
 const SavedSurveysPage = ({ navigation }) => {
   const [savedSurveys, setSavedSurveys] = useState([]);
+  const { width } = Dimensions.get('window');
 
   useEffect(() => {
     fetchSavedSurveys();
@@ -40,7 +41,7 @@ const SavedSurveysPage = ({ navigation }) => {
         <Text style={styles.title}>Saved Surveys</Text>
         {savedSurveys.map((item, index) => (
           <View key={index} style={styles.surveyItem}>
-            <View>
+            <View style={styles.leftContainer}>
               <Text style={styles.surveyTitle}>{item.title}</Text>
               {visibleQuestions[item._id] &&
                 item.questions &&
@@ -76,7 +77,6 @@ const SavedSurveysPage = ({ navigation }) => {
     </>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -115,10 +115,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   viewQuestionsButton: {
-    backgroundColor: 'blue',
+    backgroundColor: 'gray',
     padding: 8,
     borderRadius: 4,
     marginTop: 8,
+    width:'50%',
   },
   viewQuestionsButtonText: {
     color: '#fff',
@@ -135,6 +136,16 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 14,
     marginLeft: 16,
+  }, leftContainer: {
+    flex: 1,
+    marginRight: 16,
+  },
+  selectButton: {
+    backgroundColor: 'maroon',
+    padding: 10,
+    borderRadius: 4,
+    marginTop: 8,
+    alignSelf: 'flex-start',
   },
 });
 

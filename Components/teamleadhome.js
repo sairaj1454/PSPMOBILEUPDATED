@@ -93,6 +93,9 @@ function HomeScreen() {
     const handleCreatesurveyButtonPress = () => {
       navigation.navigate('createsurvey');
     }; 
+    const handleCreatesurveyButtonPresss = () => {
+      navigation.navigate('StatisticsTab');
+    }; 
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <SafeAreaView style={styles.safeArea}>
@@ -121,7 +124,7 @@ function HomeScreen() {
                   <Text style={styles.containerBoxText}>
                     View employee submissions and responses here.
                   </Text>
-                  <TouchableWithoutFeedback>
+                  <TouchableWithoutFeedback onPress={handleCreatesurveyButtonPresss}>
                     <View style={styles.customButton}>
                       <Text style={styles.customButtonText}>View Submissions</Text>
                     </View>

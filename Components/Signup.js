@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, Alert, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { API_BASE_URL } from './config';
@@ -11,6 +11,25 @@ const SignupScreen = () => {
   const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
   const navigation = useNavigation();
+
+  const handleInputChange = (field, value) => {
+    switch (field) {
+      case 'username':
+        setUsername(value);
+        break;
+      case 'email':
+        setEmail(value);
+        break;
+      case 'employeeId':
+        setEmployeeId(value);
+        break;
+      case 'password':
+        setPassword(value);
+        break;
+      default:
+        break;
+    }
+  };
 
   const handleSignup = () => {
     // Validate input fields
@@ -44,8 +63,11 @@ const SignupScreen = () => {
           {
             text: 'OK',
             onPress: () => {
-              // Refresh the page after successful signup
-              navigation.navigate('ProfileTab', {});
+              // Reset the input fields
+              handleInputChange('username', '');
+              handleInputChange('email', '');
+              handleInputChange('employeeId', '');
+              handleInputChange('password', '');
             },
           },
         ]);
@@ -57,7 +79,7 @@ const SignupScreen = () => {
   };
 
   const handleTeamleadSignups = () => {
-    navigation.navigate('LeadSignup');
+    navigation.navigate('adminsignup');
   };
 
   const isValidEmail = (email) => {
@@ -67,41 +89,45 @@ const SignupScreen = () => {
   };
 
   return (
-    <>
-      <TopBar></TopBar>
+    <ScrollView style={styles.scrollContainer}>
+      <TopBar />
       <View style={styles.container}>
         <Text style={styles.logo}>Create Employee</Text>
-        <View style={styles.inputView}>
+        <View key="username" style={styles.inputView}>
           <TextInput
             style={styles.inputText}
             placeholder="Username"
             placeholderTextColor="maroon"
-            onChangeText={(text) => setUsername(text)}
+            onChangeText={(text) => handleInputChange('username', text)}
+            value={username}
           />
         </View>
-        <View style={styles.inputView}>
+        <View key="email" style={styles.inputView}>
           <TextInput
             style={styles.inputText}
             placeholder="Email"
             placeholderTextColor="maroon"
-            onChangeText={(text) => setEmail(text)}
+            onChangeText={(text) => handleInputChange('email', text)}
+            value={email}
           />
         </View>
-        <View style={styles.inputView}>
+        <View key="employeeId" style={styles.inputView}>
           <TextInput
             style={styles.inputText}
             placeholder="Employee ID"
             placeholderTextColor="maroon"
-            onChangeText={(text) => setEmployeeId(text)}
+            onChangeText={(text) => handleInputChange('employeeId', text)}
+            value={employeeId}
           />
         </View>
-        <View style={styles.inputView}>
+        <View key="password" style={styles.inputView}>
           <TextInput
             style={styles.inputText}
             placeholder="Password"
             placeholderTextColor="maroon"
             secureTextEntry
-            onChangeText={(text) => setPassword(text)}
+            onChangeText={(text) => handleInputChange('password', text)}
+            value={password}
           />
         </View>
         <Pressable style={styles.signupBtn} onPress={handleSignup}>
@@ -109,15 +135,20 @@ const SignupScreen = () => {
             <Text style={[styles.signupText, { opacity: pressed ? 0.6 : 1 }]}>Create</Text>
           )}
         </Pressable>
-     
+        <Text style={styles.link} onPress={handleTeamleadSignups}>
+          Create Admin?
+        </Text>
       </View>
-    </>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  scrollContainer: {
     flex: 1,
+  },
+  container: {
+    marginTop:100,
     backgroundColor: '#f2f2f2',
     alignItems: 'center',
     justifyContent: 'center',
@@ -125,7 +156,7 @@ const styles = StyleSheet.create({
   logo: {
     fontWeight: 'bold',
     fontSize: 30,
-    color: 'black',
+    color: 'maroon',
     marginBottom: 20,
     elevation: 10,
   },

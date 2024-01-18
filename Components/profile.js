@@ -110,12 +110,13 @@ const ProfilePage = () => {
 
             {/* Role Text Input */}
             <TextInput
-              label="Role"
-              value={profileData.role}
-              mode="outlined"
-              editable={false}
-              style={styles.textInput}
-            />
+  label="Role"
+  value={profileData.role === 'user' ? 'Employee' : profileData.role}
+  mode="outlined"
+  editable={false}
+  style={styles.textInput}
+/>
+
 
             {/* Add more fields based on your backend response */}
           </Card.Content>
