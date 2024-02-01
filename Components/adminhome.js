@@ -19,6 +19,7 @@ import SuggestionsPage from './suggestions';
 import Createsurvey from './createsurvey';
 import Adminpannel from './adminpannel';
 import SignupScreen from './Signup';
+import TopBaro from './topbartwo';
 const Tab = createBottomTabNavigator();
 
 export default function Adminhomeome() {
@@ -99,7 +100,7 @@ function HomeScreen() {
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <SafeAreaView style={styles.safeArea}>
-            <TopBar />
+            <TopBaro></TopBaro>
             <Text style={styles.h}>PSP Admin Portal</Text>
     <ImageSliderWithText></ImageSliderWithText>
            

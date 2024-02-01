@@ -21,6 +21,9 @@ import ChangePassword from './Components/changepassword';
 import SPage from './Components/getSuggestations';
 import TeamD from './Components/Teamdetails';
 import ChatScreen from './Components/chat';
+import LeaveManagementScreen from './Components/userleavemanagement';
+import LeaveCalendarScreen from './Components/userleavepage';
+import LeaveApproveScreen from './Components/Teamleadleaveapprove';
 const Stack = createStackNavigator();
 
 const App = () => {
@@ -41,7 +44,12 @@ const App = () => {
   }}
 />
         <Stack.Screen name="Signup" component={SignupScreen} />
+        <Stack.Screen name="leave" component={LeaveManagementScreen} />
+        <Stack.Screen name="applyleave" component={LeaveCalendarScreen} />
+        
         <Stack.Screen name="LeadSignup" component={TeamLeadSignupScreen} />
+        <Stack.Screen name="LeaveApproveScreen" component={LeaveApproveScreen} />
+
         <Stack.Screen name="adminsignup" component={AdminSignupScreen} />
         <Stack.Screen name="Adminhome" component={Adminhome}  options={{
     header: () => null, 
@@ -52,6 +60,7 @@ const App = () => {
           <Stack.Screen name="UserDetails" component={UserDetailsScreen} />
           <Stack.Screen name="LUserDetail" component={LUserDetail} />
 <Stack.Screen name='ViewSurvey' component={ViewSurveys}/>
+
 <Stack.Screen name="ViewResponses" component={ViewResponses} />
 <Stack.Screen name="SelectUsers" component={SelectUsersPage} options={{
     header: () => null,}}/>

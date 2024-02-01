@@ -47,6 +47,17 @@ const SelectUsersPage = ({ route, navigation }) => {
       return;
     }
   
+    // Check if any of the selected users have a survey count greater than 0
+    const usersWithSurveyCountMoreThanZero = selectedUsers.filter((user) => user.surveyCount > 0);
+  
+    if (usersWithSurveyCountMoreThanZero.length > 0) {
+      Alert.alert(
+        'Error',
+        'Cannot upload survey for users with a survey count greater than 0.'
+      );
+      return;
+    }
+  
     try {
       const surveyData = {
         title: surveyTitle,
@@ -55,15 +66,15 @@ const SelectUsersPage = ({ route, navigation }) => {
       };
   
       setModalVisible(true);
-
+  
       const response = await axios.post(`${API_BASE_URL}/surveys`, surveyData);
   
       setModalVisible(false);
-
+  
       console.log(response.data.message);
   
       setUploadSuccess(true);
-
+  
       setTimeout(() => {
         setUploadSuccess(false);
         navigation.navigate('createsurvey');
@@ -74,6 +85,8 @@ const SelectUsersPage = ({ route, navigation }) => {
       setModalVisible(false);
     }
   };
+  
+  
 
   const renderUserItem = (user) => {
     const isSelected = selectedUsers.some((selectedUser) => selectedUser._id === user._id);

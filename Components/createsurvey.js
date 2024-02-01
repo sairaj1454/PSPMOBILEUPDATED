@@ -24,17 +24,29 @@ const CreateSurveyPage = () => {
   };
 
   const handleAddQuestion = (questionType) => {
-    setQuestions([
-      ...questions,
-      {
-        question: '',
-        type: questionType === 'mcq' ? 'mcq' : 'text',
-        options: questionType === 'mcq' ? ['', ''] : [],
-        answer: '',
-      },
-    ]);
+    if (questionType === 'overallRating') {
+      setQuestions([
+        ...questions,
+        {
+          question: 'Overall Rating:',
+          type: 'mcq',
+          options: ['⭐', '⭐⭐', '⭐⭐⭐', '⭐⭐⭐⭐', '⭐⭐⭐⭐⭐'],
+          answer: '',
+        },
+      ]);
+    } else {
+      setQuestions([
+        ...questions,
+        {
+          question: '',
+          type: questionType === 'mcq' ? 'mcq' : 'text',
+          options: questionType === 'mcq' ? ['', ''] : [],
+          answer: '',
+        },
+      ]);
+    }
   };
-  
+
   const handleDeleteQuestion = (questionIndex) => {
     const updatedQuestions = [...questions];
     updatedQuestions.splice(questionIndex, 1);
@@ -63,17 +75,14 @@ const CreateSurveyPage = () => {
         {question.type === 'mcq' && (
           <View>
             {question.options.map((option, optionIndex) => (
-              <TextInput
+              <TouchableOpacity
                 key={optionIndex}
-                style={styles.titleInput}
-                placeholder={`Option ${optionIndex + 1}`}
-                value={option}
-                onChangeText={(text) => handleOptionChange(text, questionIndex, optionIndex)}
-              />
+                style={styles.optionContainer}
+                onPress={() => handleAnswerChange(option, questionIndex)}
+              >
+                <Text style={styles.optionText}>{option}</Text>
+              </TouchableOpacity>
             ))}
-            <TouchableOpacity onPress={() => handleAddOption(questionIndex)}>
-              <Text>Add Option</Text>
-            </TouchableOpacity>
           </View>
         )}
       </Card>
@@ -138,6 +147,14 @@ const CreateSurveyPage = () => {
           buttonStyle={styles.addButton}
           titleStyle={styles.addButtonTitle}
         />
+        <Button
+          icon={<Icon name="add" size={24} color="white" />}
+          title="Add Overall Rating Question"
+          onPress={() => handleAddQuestion('overallRating')}
+          containerStyle={styles.addButtonContainer}
+          buttonStyle={styles.addButton}
+          titleStyle={styles.addButtonTitle}
+        />
         <TouchableOpacity
           style={styles.customNextButton}
           onPress={handleNextPress}
@@ -146,7 +163,7 @@ const CreateSurveyPage = () => {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.customNextButton}
-          onPress={() => navigation.navigate('Se')}
+          onPress={() => navigation.navigate('SavedSurveys')}
         >
           <Text style={styles.customButtonText}>Saved Surveys</Text>
         </TouchableOpacity>
@@ -214,6 +231,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 18,
+  },
+  optionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 5,
+  },
+  optionText: {
+    marginLeft: 10,
+    fontSize: 16,
   },
 });
 

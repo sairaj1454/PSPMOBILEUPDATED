@@ -10,7 +10,6 @@ const ChatScreen = ({ route }) => {
   const [messages, setMessages] = useState([]);
   const navigation = useNavigation();
 
-
   const fetchMessages = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -69,10 +68,12 @@ const ChatScreen = ({ route }) => {
   };
 
   useEffect(() => {
-    const intervalId = setInterval(fetchMessages, 1000);
+    const intervalId = setInterval(() => {
+      fetchMessages();
+    }, 1000);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [fetchMessages]);
 
   const renderBubble = (props) => {
     const { currentMessage } = props;

@@ -95,6 +95,9 @@ function HomeScreen() {
   const  handleViewTeamDetailsPress = () => {
     navigation.navigate('TeamDetails');
   };
+  const  handleApplyLeave = () => {
+    navigation.navigate('applyleave');
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -122,6 +125,19 @@ function HomeScreen() {
             <TouchableWithoutFeedback onPress={handleViewTeamDetailsPress}>
               <View style={styles.customButton}>
                 <Text style={styles.customButtonText}>View Team Details</Text>
+              </View>
+            </TouchableWithoutFeedback>
+          </Card.Content>
+        </Card>
+        <Card style={styles.additionalContentCard}>
+          <Card.Content>
+            <Text style={styles.additionalHeaderText}>Absense Management:</Text>
+            <Text style={styles.additionalText}>
+              - Explore details about your Leaves.
+            </Text>
+            <TouchableWithoutFeedback onPress={handleApplyLeave}>
+              <View style={styles.customButton}>
+                <Text style={styles.customButtonText}>Apply Leave</Text>
               </View>
             </TouchableWithoutFeedback>
           </Card.Content>

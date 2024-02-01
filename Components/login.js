@@ -149,6 +149,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor:'white',
   },
   link: {
     margin: 5,
@@ -164,6 +165,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
   },
   logo: {
+    fontFamily:'Roboto',
     fontWeight: 'bold',
     fontSize: 30,
     color: 'black',

@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   logo: {
     fontWeight: 'bold',
     fontSize: 30,
-    color: 'maroon',
+    color: 'black',
     marginBottom: 20,
     elevation: 10,
   },

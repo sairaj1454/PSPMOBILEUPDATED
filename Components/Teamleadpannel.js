@@ -35,6 +35,10 @@ const TeamLeadPannel = () => {
     navigation.navigate('ChatScreen', { username });
   };
 
+  const handleApproveLeave = (userDetails) => {
+    navigation.navigate('LeaveApproveScreen', { username: userDetails.username });
+  };
+
   const renderUserItem = ({ item }) => (
     <View style={styles.cardContainer}>
       <Card style={styles.card}>
@@ -44,7 +48,7 @@ const TeamLeadPannel = () => {
         </Card.Content>
         <Card.Actions style={styles.cardActions}>
           <IconButton
-            icon="chat" // You can use the appropriate chat icon
+            icon="chat"
             color="blue"
             size={24}
             onPress={() => handleChatWithUser(item.username)}
@@ -55,6 +59,14 @@ const TeamLeadPannel = () => {
             mode="contained"
           >
             Manage
+          </Button>
+          <Button
+            style={styles.manageButton}
+            onPress={() => handleApproveLeave(item)}
+            mode="contained"
+            color="maroon"
+          >
+            Approve Leave
           </Button>
         </Card.Actions>
       </Card>
@@ -89,12 +101,13 @@ const styles = StyleSheet.create({
   },
   card: {
     marginVertical: 10,
-    flexDirection: 'row', // Make sure it's row-oriented
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },cardContainer: {
+  },
+  cardContainer: {
     marginVertical: 10,
-    flexDirection: 'row', // Make sure it's row-oriented
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },

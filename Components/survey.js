@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+} from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -12,6 +20,36 @@ const SurveyPage = ({ route }) => {
   const [selectedOptions, setSelectedOptions] = useState({});
   const [isModalVisible, setModalVisible] = useState(false);
   const navigation = useNavigation();
+
+  // Load previously saved answers on component mount
+  useEffect(() => {
+    const loadSavedAnswers = async () => {
+      try {
+        const savedAnswersString = await AsyncStorage.getItem('savedAnswers');
+        if (savedAnswersString) {
+          const savedAnswers = JSON.parse(savedAnswersString);
+          setSelectedOptions(savedAnswers);
+        }
+      } catch (error) {
+        console.error('Error loading saved answers:', error.message);
+      }
+    };
+
+    loadSavedAnswers();
+  }, []);
+
+  // Save answers whenever the selectedOptions change
+  useEffect(() => {
+    const saveAnswers = async () => {
+      try {
+        await AsyncStorage.setItem('savedAnswers', JSON.stringify(selectedOptions));
+      } catch (error) {
+        console.error('Error saving answers:', error.message);
+      }
+    };
+
+    saveAnswers();
+  }, [selectedOptions]);
 
   const handleOptionSelect = (questionIndex, option) => {
     setSelectedOptions((prevOptions) => ({
@@ -62,12 +100,15 @@ const SurveyPage = ({ route }) => {
       console.log(response.data.message);
   
       setModalVisible(true);
+
+      // Clear saved answers upon successful submission
+      await AsyncStorage.removeItem('savedAnswers');
+  
     } catch (error) {
       console.error('Error submitting survey:', error.message);
       Alert.alert('Error', 'Error submitting survey response');
     }
   };
-  
 
   const handleModalClose = () => {
     setModalVisible(false);

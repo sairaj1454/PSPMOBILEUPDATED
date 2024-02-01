@@ -5,6 +5,7 @@ import {
   FlatList,
   StyleSheet,
   Alert,
+  Button,
   TouchableOpacity,
   TextInput
 } from 'react-native';
@@ -15,12 +16,13 @@ import {
 } from 'react-native-paper';
 import axios from 'axios';
 import RNPickerSelect from "react-native-picker-select";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { API_BASE_URL } from './config';
 import { AirbnbRating } from 'react-native-ratings';
 import TopBar from './topbar';
-import { useNavigation } from '@react-navigation/native'; // Import the necessary module
-import Icon from 'react-native-vector-icons/FontAwesome'; // You can choose an icon from any available icon library
+import { useNavigation } from '@react-navigation/native'; 
+import Icon from 'react-native-vector-icons/FontAwesome'; 
 
 const UserDetailsScreen = ({ route }) => {
   const { userDetails } = route.params;
@@ -31,15 +33,34 @@ const UserDetailsScreen = ({ route }) => {
   const [assignedTeamLead, setAssignedTeamLead] = useState('');
   const [isEditingTeamLead, setIsEditingTeamLead] = useState(false);
   const [selectedUserRole, setSelectedUserRole] = useState('');
-  const navigation = useNavigation(); // Get the navigation object
+  const [adminEmail, setAdminEmail] = useState('');
+  const [refreshPage, setRefreshPage] = useState(false); // State variable for refreshing the page
+
+  const navigation = useNavigation();
   const handleChatButtonPress = () => {
-    // Navigate to the chat screen with the user's details
     navigation.navigate('ChatScreen', { username: userDetails.username });
   };
+
   useEffect(() => {
     fetchSurveyData();
     fetchAssignedTeamLeadDetails();
-  }, []);
+  }, [refreshPage]); // Add refreshPage to the dependency array
+
+  const handleSendBackup = async () => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/sendBackupResponses`, {
+        userEmail: adminEmail,
+        username: userDetails.username,
+      });
+
+      Alert.alert('Success', 'Backup responses sent successfully');
+
+      setAdminEmail('');
+    } catch (error) {
+      console.error('Error sending backup responses:', error);
+      Alert.alert('Error', 'Failed to send backup responses. Please try again.');
+    }
+  };
 
   const fetchAssignedTeamLeadDetails = async () => {
     try {
@@ -66,15 +87,15 @@ const UserDetailsScreen = ({ route }) => {
   const handleDeleteSurveyResponse = async (surveyTitle) => {
     try {
       Alert.alert(
-        'Confirm Delete',
-        `Are you sure you want to delete the survey response for "${surveyTitle}"?`,
+        'Confirm Backup',
+        `Are you sure you want to Backup the survey response for "${surveyTitle}"?`,
         [
           {
             text: 'Cancel',
             style: 'cancel',
           },
           {
-            text: 'Delete',
+            text: 'Backup',
             onPress: async () => {
               await axios.delete(`${API_BASE_URL}/deletesurveyresponse`, {
                 data: {
@@ -83,7 +104,7 @@ const UserDetailsScreen = ({ route }) => {
                 },
               });
 
-              fetchSurveyData();
+              setSurveyData(surveyData.filter(response => response.surveyTitle !== surveyTitle));
             },
           },
         ],
@@ -112,7 +133,7 @@ const UserDetailsScreen = ({ route }) => {
         teamLeadUsername: selectedTeamLead,
       });
 
-      fetchSurveyData();
+      setRefreshPage(!refreshPage); // Update refreshPage to trigger a refresh
       setAvailableTeamLeads([]);
       setAssignedTeamLead(selectedTeamLead);
       setIsEditingTeamLead(false);
@@ -128,29 +149,23 @@ const UserDetailsScreen = ({ route }) => {
 
   const handleUpdateUserRole = async () => {
     try {
-      // Check if the selectedUserRole is empty
       if (!selectedUserRole) {
         Alert.alert('Error', 'Please select a role before updating.');
         return;
       }
-  
-      // Make a request to the backend to update the user's role
+
       await axios.post(`${API_BASE_URL}/admin/updateuserrole`, {
         username: userDetails.username,
         role: selectedUserRole,
       });
-  
-      // Optionally, you can fetch updated user details after the role update
-      // fetchUserDetails(); // Implement the function to fetch user details
-  
+
+      setRefreshPage(!refreshPage); // Update refreshPage to trigger a refresh
       Alert.alert('Success', 'User role updated successfully');
     } catch (error) {
       console.error('Error updating user role:', error);
       Alert.alert('Error', 'Failed to update user role. Please try again.');
     }
   };
-  
- 
 
   const renderSurveyItem = ({ item }) => (
     <PaperCard style={styles.surveyCard}>
@@ -177,7 +192,7 @@ const UserDetailsScreen = ({ route }) => {
       </PaperCard.Content>
       <PaperCard.Actions>
         <PaperButton onPress={() => handleDeleteSurveyResponse(item.surveyTitle)} mode="contained" style={styles.button}>
-          Delete Survey Response
+          Backup Survey Response
         </PaperButton>
       </PaperCard.Actions>
     </PaperCard>
@@ -185,7 +200,6 @@ const UserDetailsScreen = ({ route }) => {
 
   const renderUserDetailsContainer = () => (
     <FlatList
-   
       data={[userDetails]}
       keyExtractor={(item) => item.username}
       renderItem={({ item }) => (
@@ -208,10 +222,10 @@ const UserDetailsScreen = ({ route }) => {
             </View>
            
             <View style={styles.tableRow}>
-            <Text style={styles.labelText}>Role:</Text>
-            <Text style={styles.detailText}>{item.role}</Text>
-          </View>
-          
+              <Text style={styles.labelText}>Role:</Text>
+              <Text style={styles.detailText}>{item.role}</Text>
+            </View>
+         
             <View style={styles.tableRow}>
               <Text style={styles.labelText}>Assigned Team Lead:</Text>
               <Text style={styles.detailText}>{assignedTeamLead.teamLeadUsername}</Text>
@@ -220,29 +234,25 @@ const UserDetailsScreen = ({ route }) => {
                   Edit
                 </PaperButton>
               )}
-              
             </View>
           
             <View style={styles.tableRow}>
-                <Text style={styles.labelText}> Select Role:</Text>
-                
-                
-              </View>
-             
-          <RNPickerSelect
-           value={selectedUserRole}
-                 onValueChange={(value) => setSelectedUserRole(value)}
-                 items={[
-                     { label: "teamlead", value: "teamlead" },
-                     { label: "user", value: "user" },
-                     
-                 ]}
-             />
+              <Text style={styles.labelText}>Select Role:</Text>
+            </View>
+           
+            <RNPickerSelect
+              value={selectedUserRole}
+              onValueChange={(value) => setSelectedUserRole(value)}
+              items={[
+                { label: "teamlead", value: "teamlead" },
+                { label: "user", value: "user" },
+              ]}
+            />
 
-              <PaperButton onPress={handleUpdateUserRole} mode="contained" style={styles.button}>
-                Update User Role
-              </PaperButton>
-              <PaperButton
+            <PaperButton onPress={handleUpdateUserRole} mode="contained" style={styles.button}>
+              Update User Role
+            </PaperButton>
+            <PaperButton
               onPress={handleChatButtonPress}
               mode="contained"
               style={styles.button}
@@ -252,6 +262,17 @@ const UserDetailsScreen = ({ route }) => {
             >
               Start Chat
             </PaperButton>
+            <View style={styles.v}>
+              <PaperTextInput
+                style={styles.searchBar}
+                placeholder="Enter Email"
+                value={adminEmail}
+                onChangeText={setAdminEmail}
+              />
+              <PaperButton mode="contained" style={styles.button} onPress={handleSendBackup}>
+                Send Backup Survey Response
+              </PaperButton>
+            </View>
             {isEditingTeamLead && (
               <>
                 <PaperTextInput
@@ -265,29 +286,27 @@ const UserDetailsScreen = ({ route }) => {
                 </PaperButton>
 
                 <FlatList
-    data={availableTeamLeads}
-    keyExtractor={(item) => item._id}
-    renderItem={({ item }) => (
-      <PaperCard key={item.username} style={styles.teamLeadCard}>
-        <TouchableOpacity
-          onPress={() => setSelectedTeamLead(item.username)}
-          style={[
-            styles.teamLeadContainer,
-            selectedTeamLead === item.username ? styles.selectedTeamLead : null,
-          ]}
-        >
-          <Text style={[
-            styles.teamLeadText,
-            selectedTeamLead === item.username ? styles.selectedTeamLeadText : null,
-          ]}>
-            {item.username}
-          </Text>
-        </TouchableOpacity>
-      </PaperCard>
-      
-    )}
-    
-  />
+                  data={availableTeamLeads}
+                  keyExtractor={(item) => item._id}
+                  renderItem={({ item }) => (
+                    <PaperCard key={item.username} style={styles.teamLeadCard}>
+                      <TouchableOpacity
+                        onPress={() => setSelectedTeamLead(item.username)}
+                        style={[
+                          styles.teamLeadContainer,
+                          selectedTeamLead === item.username ? styles.selectedTeamLead : null,
+                        ]}
+                      >
+                        <Text style={[
+                          styles.teamLeadText,
+                          selectedTeamLead === item.username ? styles.selectedTeamLeadText : null,
+                        ]}>
+                          {item.username}
+                        </Text>
+                      </TouchableOpacity>
+                    </PaperCard>
+                  )}
+                />
 
                 <PaperButton onPress={handleAssignTeamLead} mode="contained" style={styles.button}>
                   Assign Team Lead
@@ -320,9 +339,7 @@ const UserDetailsScreen = ({ route }) => {
       )}
     />
   );
-  
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -365,6 +382,10 @@ const styles = StyleSheet.create({
   button: {
     marginVertical: 5,
     backgroundColor: 'maroon',
+  },
+  v:{
+borderTopWidth:1,
+margin:10,
   },
   surveyContainer: {
     marginVertical: 10,
@@ -418,4 +439,3 @@ const styles = StyleSheet.create({
   },
 });
 export default UserDetailsScreen;
- 

@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const pdf = require('html-pdf');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -35,14 +36,11 @@ app.use(bodyParser.json());
 
 // Enable CORS for the React Native app
 app.use(cors({
-  origin: 'exp://10.113.34.90:8081',
+  origin: 'exp:10.113.34.128//:8081',
 }));
 
 // MongoDB connection
-mongoose.connect('mongodb+srv://sairajdeep1454:PakN18tPqCtGLBGZ@pcpmobile.4mkwmgi.mongodb.net/', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect('mongodb://127.0.0.1:27017/PCPMOBILE', { useNewUrlParser: true, useUnifiedTopology: true });
 const db = mongoose.connection;
 
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
@@ -66,7 +64,10 @@ const UserSchema = new mongoose.Schema({
     teamLeadId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     username: String,
   },
-
+  surveyCount: {
+    type: Number,
+    default: 0,
+  },
   assignedSurveys: [
     {
       surveyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Survey' },
@@ -103,6 +104,32 @@ const UserSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model('User', UserSchema);
+
+const BackupResponseSchema = new mongoose.Schema({
+  username: String,
+  surveyTitle: String,
+  responses: [
+    {
+      question: String,
+      answer: String,
+    },
+  ],
+  ratings: [
+    {
+      rating: Number,
+      reviewText: String,
+    },
+  ],
+  assignedTeamLead: {
+    teamLeadId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    username: String,
+  },
+  // You can add other fields as needed, such as timestamp, etc.
+});
+
+const BackupResponse = mongoose.model('BackupResponse', BackupResponseSchema);
+
+
 
 
 
@@ -141,6 +168,89 @@ const chatMessageSchema = new mongoose.Schema({
 });
 
 const ChatMessage = mongoose.model('ChatMessage', chatMessageSchema);
+const LeaveSchema = new mongoose.Schema({
+  username: String,
+  startDate: Date,
+  endDate: Date,
+  reason: String,
+  teamLead: {
+    teamLeadId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    username: String,
+  },
+  numberOfDays: Number,
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }, // Add status field
+});
+
+const Leave = mongoose.model('Leave', LeaveSchema);
+
+// API endpoint to fetch leave status with start and end dates
+app.get('/leave/status', authenticateUser, async (req, res) => {
+  try {
+    const username = req.user.username;
+    // Fetch leave status for the user
+    const leaveStatus = await Leave.find({ username }, { startDate: 1, endDate: 1, status: 1 });
+    res.json(leaveStatus);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// API endpoint to handle leave requests
+// API endpoint to handle leave requests
+app.post('/leave', authenticateUser, async (req, res) => {
+  try {
+    const { startDate, endDate, reason } = req.body;
+    const username = req.user.username; // Assuming username is passed in the request body or retrieved from token
+
+    // Calculate the number of days between start and end dates
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+  // Calculate the number of days between start and end dates (inclusive)
+const timeDifference = end.getTime() - start.getTime(); // Difference in milliseconds
+const numberOfDays = Math.ceil(timeDifference / (1000 * 3600 * 24)) + 1; // Add 1 to include both start and end dates
+
+    // Fetching user document to get team lead information
+    const user = await User.findOne({ username });
+    const teamLead = user.assignedTeamLead;
+
+    const newLeave = new Leave({ username, startDate, endDate, reason, teamLead, numberOfDays });
+    await newLeave.save();
+
+    res.status(201).json({ message: 'Leave request submitted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add this route to fetch leave details by username
+// Add this route to fetch all leaves applied by a user
+app.get('/leave/all/:username', authenticateUser, async (req, res) => {
+  try {
+    const { username } = req.params;
+    // Fetch all leave requests applied by the user
+    const leaves = await Leave.find({ username });
+    res.json(leaves);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add this route to handle leave approval or rejection
+app.put('/leave/update/:leaveId', authenticateUser, async (req, res) => {
+  try {
+    const { leaveId } = req.params;
+    const { status } = req.body;
+    // Update leave status
+    await Leave.findByIdAndUpdate(leaveId, { status });
+    res.status(200).json({ message: 'Leave status updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 app.get('/chat/:receiverUsername', authenticateUser, async (req, res) => {
   try {
@@ -179,46 +289,7 @@ app.post('/chat', authenticateUser, async (req, res) => {
   }
 });
 
-app.post('/surveyresponse', async (req, res) => {
-  try {
-    const { userId, surveyTitle, responses } = req.body;
 
-    // Find the user by ID
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Check if the user already has responses for this surveyTitle
-    const existingSurveyResponseIndex = user.surveyResponses.findIndex(
-      (response) => response.surveyTitle === surveyTitle
-    );
-
-    if (existingSurveyResponseIndex !== -1) {
-      // Update existing survey response
-      user.surveyResponses[existingSurveyResponseIndex].responses = responses;
-    } else {
-      // Add new survey response
-      user.surveyResponses.push({ surveyTitle, responses });
-    }
-
-    // Save the user document
-    await user.save();
-
-    // Remove the user from the accessibleUsers list for the survey
-    const survey = await Survey.findOne({ title: surveyTitle });
-    if (survey) {
-      // Remove the user's ID from the accessibleUsers array
-      survey.accessibleUsers = survey.accessibleUsers.filter((id) => id.toString() !== userId);
-      await survey.save();
-    }
-
-    res.status(200).json({ message: 'Survey response saved successfully' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error saving survey response' });
-  } });
 app.post('/submit-suggestion', async (req, res) => {
   try {
     const { content } = req.body;
@@ -366,7 +437,134 @@ app.post('/deletereview', async (req, res) => {
 // ... (existing code)
 
 // Add this route to handle deleting surveys from both User and Survey schemas
+// Inside your Express backend code
 
+// Import necessary modules and libraries (already imported in your code)
+
+// ... (existing code)
+//sss
+
+app.post('/sendBackupResponses', async (req, res) => {
+  try {
+    const { userEmail, username } = req.body;
+
+    // Find the user by username
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Retrieve backup responses for the user
+    const backupResponses = await BackupResponse.find({ username });
+
+    // Prepare email content
+    let emailContent = `
+      <html>
+        <head>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              line-height: 1.6;
+            }
+            .survey-title {
+              font-size: 18px;
+              font-weight: bold;
+              margin-bottom: 5px;
+            }
+            .question {
+              font-weight: bold;
+            }
+            .answer {
+              margin-bottom: 10px;
+            }
+            .rating {
+              margin-top: 10px;
+            }
+            .average-rating {
+              font-weight: bold;
+              margin-top: 20px;
+            }
+          </style>
+        </head>
+        <body>
+          <h2>Backup Survey Responses for ${user.username}</h2>
+    `;
+
+    let totalRatings = 0;
+    let numberOfReviews = 0;
+
+    backupResponses.forEach((backup) => {
+      emailContent += `<div class="survey-container">
+                        <div class="survey-title">Survey Title: ${backup.surveyTitle}</div>`;
+      backup.responses.forEach((response) => {
+        emailContent += `<div class="question">Question: ${response.question}</div>
+                        <div class="answer">Answer: ${response.answer}</div>`;
+      });
+
+      // Include rating and review details
+      if (backup.ratings && backup.ratings.length > 0) {
+        emailContent += '<div class="rating"><strong>Ratings:</strong><br>';
+        backup.ratings.forEach((rating, index) => {
+          totalRatings += rating.rating;
+          numberOfReviews++;
+          emailContent += `<div>Review ${index + 1}: Rating - ${rating.rating}, Review Text - ${rating.reviewText}</div>`;
+        });
+        emailContent += '</div>';
+      }
+
+      // Include assigned team lead details
+      if (backup.assignedTeamLead) {
+        emailContent += `<div>Assigned Team Lead: ${backup.assignedTeamLead.username}</div>`;
+      }
+
+      emailContent += `</div><hr>`;
+    });
+
+    // Calculate average rating
+    const averageRating = totalRatings / numberOfReviews;
+    emailContent += `<div class="average-rating">Average Rating: ${averageRating.toFixed(2)}</div>`;
+
+    emailContent += `</body></html>`;
+
+    // Generate PDF from email content
+    pdf.create(emailContent).toBuffer(async (err, buffer) => {
+      if (err) {
+        console.error('Error generating PDF:', err);
+        return res.status(500).json({ message: 'Error generating PDF' });
+      }
+
+      // Send email to admin with backup responses and PDF attachment
+      const mailOptions = {
+        from: 'HR Department <hr@example.com>',
+        to: userEmail,
+        subject: 'Backup Survey Responses',
+        html: emailContent,
+        attachments: [
+          {
+            filename: 'backup_survey_responses.pdf',
+            content: buffer,
+            contentType: 'application/pdf',
+          },
+        ],
+      };
+
+      // Send the email
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error('Error sending email:', error);
+          res.status(500).json({ message: 'Error sending email' });
+        } else {
+          console.log('Email sent:', info.response);
+          res.status(200).json({ message: 'Backup responses sent successfully' });
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Error sending backup responses:', error);
+    res.status(500).json({ message: 'Error sending backup responses' });
+  }
+});
 // ... (existing code)
 
 // Route to handle survey upload
@@ -423,8 +621,10 @@ app.get('/teamleads', async (req, res) => {
 app.get('/admin/surveys/:surveyId/responses', async (req, res) => {
   try {
     const surveyId = req.params.surveyId;
+
+    // Find the survey by ID
     const survey = await Survey.findById(surveyId);
-    
+
     if (!survey) {
       return res.status(404).json({ message: 'Survey not found' });
     }
@@ -436,7 +636,7 @@ app.get('/admin/surveys/:surveyId/responses', async (req, res) => {
     const percentages = survey.questions.map((question) => {
       const totalResponses = surveyResponses.length;
       const optionCounts = {};
-      
+
       // Count the number of times each option is chosen
       surveyResponses.forEach((response) => {
         const userResponse = response.surveyResponses.find((sr) => sr.surveyTitle === survey.title);
@@ -460,12 +660,24 @@ app.get('/admin/surveys/:surveyId/responses', async (req, res) => {
       };
     });
 
+    // Decrement the surveyCount for users who completed the survey
+    surveyResponses.forEach(async (response) => {
+      const user = await User.findById(response.userId); // Corrected: Use the correct property
+
+      if (user && user.surveyCount > 0) {
+        user.surveyCount -= 1; // Decrement surveyCount
+        await user.save();
+      }
+    });
+
     res.status(200).json({ surveyTitle: survey.title, percentages });
+
   } catch (error) {
     console.error('Error fetching survey responses:', error.message);
     res.status(500).json({ message: 'Error fetching survey responses' });
   }
 });
+
 // Add this route to update the role of a user
 app.post('/admin/updateuserrole', async (req, res) => {
   try {
@@ -571,26 +783,74 @@ app.post('/surveys', async (req, res) => {
       return res.status(400).json({ message: 'Title, questions, and accessibleUsers are required' });
     }
 
-  // When assigning a survey to a user
-const newSurvey = new Survey({ title, questions, accessibleUsers });
-await newSurvey.save();
+    // When assigning a survey to a user
+    const newSurvey = new Survey({ title, questions, accessibleUsers });
+    await newSurvey.save();
 
-// Update the assignedSurveys field for each user
-const usersToUpdate = await User.find({ _id: { $in: accessibleUsers } });
+    // Update the assignedSurveys field for each user and increment surveyCount
+    const usersToUpdate = await User.find({ _id: { $in: accessibleUsers } });
 
-usersToUpdate.forEach(async (user) => {
-  user.assignedSurveys.push({ surveyId: newSurvey._id, title: newSurvey.title });
-  await user.save();
-});
+    usersToUpdate.forEach(async (user) => {
+      user.assignedSurveys.push({ surveyId: newSurvey._id, title: newSurvey.title });
+      user.surveyCount += 1; // Increment the surveyCount
+      await user.save();
+    });
 
-// Respond with success message
-res.status(201).json({ message: 'Survey uploaded successfully' });
+    // Respond with success message
+    res.status(201).json({ message: 'Survey uploaded successfully' });
 
   } catch (error) {
     console.error('Error uploading survey:', error.message);
     res.status(500).json({ message: 'Error uploading survey' });
   }
 });
+
+app.post('/surveyresponse', async (req, res) => {
+  try {
+    const { userId, surveyTitle, responses } = req.body;
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if the user already has responses for this surveyTitle
+    const existingSurveyResponseIndex = user.surveyResponses.findIndex(
+      (response) => response.surveyTitle === surveyTitle
+    );
+
+    if (existingSurveyResponseIndex !== -1) {
+      // Update existing survey response
+      user.surveyResponses[existingSurveyResponseIndex].responses = responses;
+    } else {
+      // Add new survey response
+      user.surveyResponses.push({ surveyTitle, responses });
+
+      // Decrement surveyCount when a new survey response is added
+      user.surveyCount -= 1;
+    }
+
+    // Save the user document
+    await user.save();
+
+    // Remove the user from the accessibleUsers list for the survey
+    const survey = await Survey.findOne({ title: surveyTitle });
+    if (survey) {
+      // Remove the user's ID from the accessibleUsers array
+      survey.accessibleUsers = survey.accessibleUsers.filter((id) => id.toString() !== userId);
+      await survey.save();
+    }
+
+    res.status(200).json({ message: 'Survey response saved successfully' });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error saving survey response' });
+  }
+});
+
 
 
 // ... (existing code)
@@ -760,8 +1020,19 @@ app.delete('/deletesurveyresponse', async (req, res) => {
       return res.status(404).json({ message: 'Survey response not found' });
     }
 
-    // Remove the survey response from the array
-    user.surveyResponses.splice(surveyResponseIndex, 1);
+    // Move the deleted response along with ratings, reviews, and assigned team lead to backupresponses schema
+    const deletedResponse = user.surveyResponses.splice(surveyResponseIndex, 1)[0];
+    const backupResponse = new BackupResponse({
+      username: user.username,
+      surveyTitle: deletedResponse.surveyTitle,
+      responses: deletedResponse.responses,
+      ratings: deletedResponse.reviews.map((review) => ({
+        rating: review.rating,
+        reviewText: review.reviewText,
+      })),
+      assignedTeamLead: user.assignedTeamLead, // Assuming assignedTeamLead is an object with teamLeadId and username
+    });
+    await backupResponse.save();
 
     // Save the updated user document
     await user.save();
@@ -772,6 +1043,9 @@ app.delete('/deletesurveyresponse', async (req, res) => {
     res.status(500).json({ message: 'Error deleting survey response' });
   }
 });
+
+
+
 
 
 // Import necessary modules and libraries (already imported in your code)
