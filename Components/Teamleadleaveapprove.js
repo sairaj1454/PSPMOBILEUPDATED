@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet ,FlatList} from 'react-native';
-import { Card, Button, IconButton } from 'react-native-paper';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import { Card, Button } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_BASE_URL } from './config';
+import Dialog from "react-native-dialog";
 
 const LeaveApproveScreen = ({ route, navigation }) => {
   const { username } = route.params;
   const [leaves, setLeaves] = useState([]);
+  const [reason, setReason] = useState('');
+  const [showDialog, setShowDialog] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [selectedLeaveId, setSelectedLeaveId] = useState(null);
 
   useEffect(() => {
     fetchLeaveDetails();
@@ -21,7 +26,14 @@ const LeaveApproveScreen = ({ route, navigation }) => {
           Authorization: token,
         },
       });
-      setLeaves(response.data);
+
+      const sortedLeaves = response.data.sort((a, b) => {
+        if (a.status === 'pending' && b.status !== 'pending') return -1;
+        if (a.status !== 'pending' && b.status === 'pending') return 1;
+        return 0;
+      });
+
+      setLeaves(sortedLeaves);
     } catch (error) {
       console.error('Error fetching leave details:', error);
     }
@@ -30,28 +42,42 @@ const LeaveApproveScreen = ({ route, navigation }) => {
   const handleApproveLeave = async (leaveId) => {
     try {
       const token = await AsyncStorage.getItem('token');
-      await axios.put(`${API_BASE_URL}/leave/update/${leaveId}`, { status: 'approved' }, {
-        headers: {
-          Authorization: token,
-        },
-      });
-      // Refresh leave details after approval
+      await axios.put(
+        `${API_BASE_URL}/leave/update/${leaveId}`,
+        { status: 'approved' },
+        {
+          headers: {
+            Authorization: token,
+          },
+        }
+      );
       fetchLeaveDetails();
+      setShowSuccessDialog(true); 
     } catch (error) {
       console.error('Error approving leave:', error);
     }
   };
 
   const handleRejectLeave = async (leaveId) => {
+    setSelectedLeaveId(leaveId);
+    setShowDialog(true);
+  };
+
+  const submitRejectLeave = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      await axios.put(`${API_BASE_URL}/leave/update/${leaveId}`, { status: 'rejected' }, {
-        headers: {
-          Authorization: token,
-        },
-      });
-      // Refresh leave details after rejection
+      await axios.put(
+        `${API_BASE_URL}/leave/update/${selectedLeaveId}`,
+        { status: 'rejected', reason },
+        {
+          headers: {
+            Authorization: token,
+          },
+        }
+      );
       fetchLeaveDetails();
+      setShowDialog(false);
+      setReason('');
     } catch (error) {
       console.error('Error rejecting leave:', error);
     }
@@ -66,8 +92,19 @@ const LeaveApproveScreen = ({ route, navigation }) => {
         <Text>Reason: {item.reason}</Text>
       </Card.Content>
       <Card.Actions style={styles.buttonContainer}>
-        <Button onPress={() => handleApproveLeave(item._id)} color="green">Approve</Button>
-        <Button onPress={() => handleRejectLeave(item._id)} color="red">Reject</Button>
+        {item.status === 'pending' && (
+          <>
+            <Button onPress={() => handleApproveLeave(item._id)} color="green">
+              {item.status === 'pending' ? 'Approve' : 'Approved'}
+            </Button>
+            <Button onPress={() => handleRejectLeave(item._id)} color="red">
+              Reject
+            </Button>
+          </>
+        )}
+        {item.status === 'approved' && (
+          <Text style={{ color: 'green', fontWeight: 'bold' }}>Approved</Text>
+        )}
       </Card.Actions>
     </Card>
   );
@@ -80,11 +117,22 @@ const LeaveApproveScreen = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Leave Approval</Text>
-      <FlatList
-        data={leaves}
-        keyExtractor={(item) => item._id}
-        renderItem={renderLeaveItem}
-      />
+      <FlatList data={leaves} keyExtractor={(item) => item._id} renderItem={renderLeaveItem} />
+      <Dialog.Container visible={showDialog}>
+        <Dialog.Title>Reason for rejection</Dialog.Title>
+        <Dialog.Input
+          placeholder="Enter reason"
+          value={reason}
+          onChangeText={(text) => setReason(text)}
+        />
+        <Dialog.Button label="Cancel" onPress={() => setShowDialog(false)} />
+        <Dialog.Button label="Submit" onPress={submitRejectLeave} />
+      </Dialog.Container>
+      <Dialog.Container visible={showSuccessDialog}>
+        <Dialog.Title>Success</Dialog.Title>
+        <Dialog.Description>The leave has been successfully approved.</Dialog.Description>
+        <Dialog.Button label="OK" onPress={() => setShowSuccessDialog(false)} />
+      </Dialog.Container>
     </View>
   );
 };
@@ -105,6 +153,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   buttonContainer: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 10,
   },

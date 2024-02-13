@@ -11,7 +11,7 @@ export default function Challenges() {
   const [surveys, setSurveys] = useState([]);
   const [loggedInUserId, setLoggedInUserId] = useState(null);
 
-  // Function to fetch user ID
+ 
   const fetchUserId = async () => {
     try {
       const userId = await AsyncStorage.getItem('userId');
@@ -22,12 +22,12 @@ export default function Challenges() {
     }
   };
 
-  // Fetch user ID on component mount
+ 
   useEffect(() => {
     fetchUserId();
   }, []);
 
-  // Fetch surveys when the screen comes into focus
+ 
   useFocusEffect(
     useCallback(() => {
       if (!loggedInUserId) {

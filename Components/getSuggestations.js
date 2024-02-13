@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons'; // Import FontAwesome or any other icon library you prefer
+import { FontAwesome } from '@expo/vector-icons'; 
 import TopBar from './topbar';
 import { API_BASE_URL } from './config';
 
@@ -8,7 +8,7 @@ const SPage = () => {
   const [suggestions, setSuggestions] = useState([]);
 
   useEffect(() => {
-    // Fetch suggestions when the component mounts
+    
     fetchSuggestions();
   }, []);
 

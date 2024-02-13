@@ -58,21 +58,21 @@ const SavedSurveysPage = ({ navigation }) => {
 
   const handleSaveEditedTitle = async (surveyId) => {
     try {
-      await axios.put(`${API_BASE_URL}/admin/savedsurveys/${surveyId}`, {
+    
+      const response = await axios.post(`${API_BASE_URL}/admin/savedsurveys`, {
         title: editedSurveyTitle,
+        questions: savedSurveys.find((survey) => survey._id === surveyId).questions,
       });
-
-      setSavedSurveys((prevSurveys) =>
-        prevSurveys.map((survey) =>
-          survey._id === surveyId ? { ...survey, title: editedSurveyTitle } : survey
-        )
-      );
-
+  
+     
+      setSavedSurveys((prevSurveys) => [...prevSurveys, response.data]);
+  
       setIsTitleModalVisible(false);
     } catch (error) {
-      console.error('Error updating survey title:', error.message);
+      console.error('Error creating survey:', error.message);
     }
   };
+  
 
   const handleEditQuestion = (surveyId, questionIndex) => {
     const survey = savedSurveys.find((survey) => survey._id === surveyId);
@@ -87,35 +87,34 @@ const SavedSurveysPage = ({ navigation }) => {
 
   const handleSaveEditedQuestion = async () => {
     try {
-      const updatedQuestions = savedSurveys
-        .find((survey) => survey._id === selectedSurveyId)
-        .questions.map((question, index) =>
-          index === selectedQuestionIndex
-            ? { ...question, question: editedQuestion, options: editedOptions }
-            : question
-        );
-
-      await axios.put(`${API_BASE_URL}/admin/savedsurveys/${selectedSurveyId}`, {
+      const updatedSurvey = savedSurveys.find((survey) => survey._id === selectedSurveyId);
+      
+     
+      const updatedQuestions = updatedSurvey.questions.map((question, index) =>
+        index === selectedQuestionIndex
+          ? { ...question, question: editedQuestion, options: editedOptions }
+          : question
+      );
+  
+      
+      const response = await axios.post(`${API_BASE_URL}/admin/savedsurveys`, {
+        title: updatedSurvey.title,
         questions: updatedQuestions,
       });
-
-      setSavedSurveys((prevSurveys) =>
-        prevSurveys.map((survey) =>
-          survey._id === selectedSurveyId
-            ? { ...survey, questions: updatedQuestions }
-            : survey
-        )
-      );
-
+  
+      
+      setSavedSurveys((prevSurveys) => [...prevSurveys, response.data]);
+  
       setIsQuestionModalVisible(false);
     } catch (error) {
-      console.error('Error updating question:', error.message);
+      console.error('Error creating survey:', error.message);
     }
   };
+  
 
   return (
     <>
-      <TopBar />
+    
       <ScrollView style={styles.container}>
         <Text style={styles.title}>Saved Surveys</Text>
         {savedSurveys.map((item, index) => (
@@ -186,7 +185,7 @@ const SavedSurveysPage = ({ navigation }) => {
             value={editedQuestion}
             onChangeText={(text) => setEditedQuestion(text)}
           />
-          {/* Assuming editedOptions is an array of option strings */}
+         
           {editedOptions.map((option, index) => (
             <TextInput
               key={index}

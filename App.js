@@ -24,6 +24,9 @@ import ChatScreen from './Components/chat';
 import LeaveManagementScreen from './Components/userleavemanagement';
 import LeaveCalendarScreen from './Components/userleavepage';
 import LeaveApproveScreen from './Components/Teamleadleaveapprove';
+import AdminLeavesManagementPage from './Components/adminleavemanagement';
+import LeavesDetailsScreen from './Components/userapprovedleaves';
+import ForgotPasswordScreen from './Components/forgetpassword';
 const Stack = createStackNavigator();
 
 const App = () => {
@@ -46,7 +49,11 @@ const App = () => {
         <Stack.Screen name="Signup" component={SignupScreen} />
         <Stack.Screen name="leave" component={LeaveManagementScreen} />
         <Stack.Screen name="applyleave" component={LeaveCalendarScreen} />
-        
+        <Stack.Screen name="ManageLeave" component={AdminLeavesManagementPage} />
+        <Stack.Screen name="LeavesDetailsScreen" component={LeavesDetailsScreen} />
+        <Stack.Screen name="forgetpassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="SavedSurveys" component={SavedSurveysPage} />
+
         <Stack.Screen name="LeadSignup" component={TeamLeadSignupScreen} />
         <Stack.Screen name="LeaveApproveScreen" component={LeaveApproveScreen} />
 

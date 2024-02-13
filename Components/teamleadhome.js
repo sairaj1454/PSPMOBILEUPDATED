@@ -5,11 +5,11 @@ import {
   Text,
   TouchableWithoutFeedback,
   SafeAreaView,
-  ScrollView, // Import ScrollView component
+  ScrollView, 
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Card } from 'react-native-paper'; // Import Card component from react-native-paper
+import { Card } from 'react-native-paper'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Profile from './profile';
 import ImageSliderWithText from './imageslider';
@@ -64,7 +64,7 @@ export default function TeamLeadHome() {
         options={{
           tabBarLabel: 'Take Surveys',
           tabBarIcon: ({ color, size }) => {
-            return       <Icon name="file-plus" size={size} color={color} />; {/* Use "clipboard-text" for a survey icon */}
+            return       <Icon name="file-plus" size={size} color={color} />; 
             ;
           },
         }}
@@ -223,10 +223,10 @@ color:'gray',
   },
   additionalContentCard: {
     margin: 10,
-    marginTop: 20, // Adjust the margin as needed
+    marginTop: 20,
     borderRadius: 10,
     elevation: 20,
     backgroundColor:'white',
-     // Reduce the elevation if needed
+    
   },
 });

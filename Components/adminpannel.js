@@ -12,7 +12,7 @@ const AdminPanel = () => {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const usersPerPage = 5; // Set the number of users to display per page
+  const usersPerPage = 5;
   const navigation = useNavigation();
   const Viewsurvey=()=>{
     navigation.navigate('ViewSurvey')
@@ -20,7 +20,7 @@ const AdminPanel = () => {
  
   useEffect(() => {
     fetchUsers();
-  }, [currentPage]); // Reload users when the page changes
+  }, [currentPage]); 
 
   const fetchUsers = async () => {
     try {
@@ -55,7 +55,7 @@ const AdminPanel = () => {
         <Card.Content>
           <View style={styles.userCardContent}>
             <Text style={styles.usernameText}>{item.username}</Text>
-            {/* Add more user details if needed */}
+          
           </View>
         </Card.Content>
       </Card>
@@ -64,18 +64,18 @@ const AdminPanel = () => {
 
 
   const renderUserDetails = () => {
-    return null; // No need for user details in the current implementation
+    return null; 
   };
 
-  // Calculate the total number of pages
+  
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
-  // Calculate the index range of the current page
+  
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
-  // Function to handle pagination button click
+ 
   const handlePagination = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
@@ -103,7 +103,7 @@ const AdminPanel = () => {
         
         {renderUserDetails()}
 
-        {/* Pagination buttons */}
+       
         <View style={styles.paginationContainer}>
           {Array.from({ length: totalPages }).map((_, index) => (
             <TouchableOpacity
@@ -119,7 +119,7 @@ const AdminPanel = () => {
           ))}
         </View>
 
-        {/* Updated ViewSurvey as a custom button */}
+      
         <Card style={styles.card}>
           <Card.Content>
             <Text style={styles.cardText}>
@@ -161,11 +161,11 @@ backgroundColor:'lightgray',
   },
   customViewSurveyButton: {
     marginTop: 20,
-    backgroundColor: 'maroon', // Set your desired background color
+    backgroundColor: 'maroon',
     borderRadius: 10,
   },
   customViewSurveyButtonText: {
-    color: 'white', // Set your desired text color
+    color: 'white', 
     fontWeight: 'bold',
   },
   customUploadButton: {
@@ -194,7 +194,7 @@ backgroundColor:'lightgray',
     padding: 20,
     width: '100%',
     alignItems: 'center',
-    position: 'relative', // Make the container relative for absolute positioning of the close icon
+    position: 'relative', 
   },
   link:{
 marginTop:50,
@@ -236,7 +236,7 @@ textAlign:'center',
     position: 'absolute',
     top: 10,
     right: 10,
-  },// ... (previous styles)
+  },
 
   paginationContainer: {
     flexDirection: 'row',

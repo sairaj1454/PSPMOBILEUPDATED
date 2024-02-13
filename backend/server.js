@@ -21,7 +21,7 @@ const authenticateUser = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, 'PCP'); // Use your secret key here
+    const decoded = jwt.verify(token, 'PCP'); 
     console.log('Decoded Token:', decoded);
     req.user = decoded;
     next();
@@ -34,12 +34,12 @@ const authenticateUser = (req, res, next) => {
 
 app.use(bodyParser.json());
 
-// Enable CORS for the React Native app
+
 app.use(cors({
-  origin: 'exp:10.113.34.128//:8081',
+  origin: 'exp:10.113.34.148//:8081',
 }));
 
-// MongoDB connection
+
 mongoose.connect('mongodb://127.0.0.1:27017/PCPMOBILE', { useNewUrlParser: true, useUnifiedTopology: true });
 const db = mongoose.connection;
 
@@ -47,19 +47,22 @@ db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'sairajdeep1454@gmail.com', // Your Gmail email address
-    pass: 'eewx azan baey rsxc', // Your Gmail password or an app-specific password
+    user: 'sairajdeep1454@gmail.com', 
+    pass: 'eewx azan baey rsxc',
   },
 });
 
-// Define a user schema
-// Define a user schema
+
 const UserSchema = new mongoose.Schema({
   username: String,
   email: String,
   employeeId: String,
+  phoneNumber: String, 
   password: String,
+  resetPasswordOTP: String, 
+
   role: String,
+
   assignedTeamLead: {
     teamLeadId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     username: String,
@@ -68,6 +71,8 @@ const UserSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  totalLeaves: { type: Number, default: 30 },
+  remainingLeaves: { type: Number, default: 30 },
   assignedSurveys: [
     {
       surveyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Survey' },
@@ -85,10 +90,10 @@ const UserSchema = new mongoose.Schema({
       ],
       reviews: [
         {
-          rating: { type: Number, min: 1, max: 5 }, // Add rating field
+          rating: { type: Number, min: 1, max: 5 }, 
           reviewText: String,
         },
-      ],// Add a reviews field to store team lead reviews
+      ],
     },
   ],
 
@@ -124,7 +129,7 @@ const BackupResponseSchema = new mongoose.Schema({
     teamLeadId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     username: String,
   },
-  // You can add other fields as needed, such as timestamp, etc.
+ 
 });
 
 const BackupResponse = mongoose.model('BackupResponse', BackupResponseSchema);
@@ -134,14 +139,13 @@ const BackupResponse = mongoose.model('BackupResponse', BackupResponseSchema);
 
 
 
-// Survey Schema
-// Survey Schema
+
 const SurveySchema = new mongoose.Schema({
   title: String,
   questions: [
     {
       question: String,
-      type: { type: String, enum: ['text', 'mcq'] }, // Updated enum values
+      type: { type: String, enum: ['text', 'mcq'] }, 
       options: [String],
       answer: String,
     },
@@ -156,7 +160,7 @@ const suggestionSchema = new mongoose.Schema({
 });
 
 const Suggestion = mongoose.model('Suggestion', suggestionSchema);
-// Add this route to fetch chat messages
+
 const chatMessageSchema = new mongoose.Schema({
   sender: String,
   receiver: String,
@@ -176,18 +180,163 @@ const LeaveSchema = new mongoose.Schema({
   teamLead: {
     teamLeadId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     username: String,
+    email: String,
   },
   numberOfDays: Number,
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }, // Add status field
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
 });
 
 const Leave = mongoose.model('Leave', LeaveSchema);
+const DefaultLeaveSchema = new mongoose.Schema({
+  startDate: Date,
+  endDate: Date,
+  reason: String,
+});
 
-// API endpoint to fetch leave status with start and end dates
+const DefaultLeave = mongoose.model('DefaultLeave', DefaultLeaveSchema);
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000);
+}app.post('/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+  
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+  
+    const otp = generateOTP();
+
+    
+    user.resetPasswordOTP = otp;
+    await user.save();
+
+    
+    const mailOptions = {
+      from: 'noreply@example.com',
+      to: email,
+      subject: 'Reset Password OTP',
+      text: `Your OTP for resetting the password is ${otp}. It will expire in 10 minutes.`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending email:', error);
+        res.status(500).json({ message: 'Error sending OTP' });
+      } else {
+        console.log('Email sent:', info.response);
+        res.status(200).json({ message: 'OTP sent successfully' });
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error resetting password' });
+  }
+});
+
+app.post('/auth/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+  
+    const user = await User.findOne({ email });
+
+    if (!user || user.resetPasswordOTP !== otp) {
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
+
+    
+
+    res.status(200).json({ message: 'OTP verified successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error verifying OTP' });
+  }
+});
+
+app.post('/auth/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+  
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+ 
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.resetPasswordOTP = null; 
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error resetting password' });
+  }
+});
+
+app.post('/admin/upload-default-leaves', authenticateUser, async (req, res) => {
+  try {
+    const { startDate, endDate, reason } = req.body;
+    
+    
+    const defaultLeave = new DefaultLeave({ startDate, endDate, reason });
+    await defaultLeave.save();
+
+    res.status(201).json({ message: 'Default leaves uploaded successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/leave/default-leaves', authenticateUser, async (req, res) => {
+  try {
+    
+    const defaultLeaves = await DefaultLeave.find({});
+    res.json(defaultLeaves);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/admin/update-total-leaves', authenticateUser, async (req, res) => {
+  try {
+    const { totalLeaves } = req.body;
+
+    
+    const prevTotalLeavesDoc = await User.findOne({}, { totalLeaves: 1 });
+    const prevTotalLeaves = prevTotalLeavesDoc.totalLeaves;
+
+    
+    const leavesDifference = totalLeaves - prevTotalLeaves;
+
+   
+    await User.updateMany({}, { totalLeaves });
+
+    
+    await User.updateMany({}, { $inc: { remainingLeaves: leavesDifference } });
+
+    res.status(200).json({ message: 'Total leaves updated successfully for all users' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+
 app.get('/leave/status', authenticateUser, async (req, res) => {
   try {
     const username = req.user.username;
-    // Fetch leave status for the user
+    
     const leaveStatus = await Leave.find({ username }, { startDate: 1, endDate: 1, status: 1 });
     res.json(leaveStatus);
   } catch (error) {
@@ -196,27 +345,88 @@ app.get('/leave/status', authenticateUser, async (req, res) => {
   }
 });
 
-// API endpoint to handle leave requests
-// API endpoint to handle leave requests
+
+app.get('/leave/all/approved/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    
+    const approvedLeaves = await Leave.find({
+      username,
+      status: 'approved',
+    });
+
+    res.json(approvedLeaves);
+  } catch (error) {
+    console.error('Error fetching approved leaves:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 app.post('/leave', authenticateUser, async (req, res) => {
   try {
     const { startDate, endDate, reason } = req.body;
-    const username = req.user.username; // Assuming username is passed in the request body or retrieved from token
+    const username = req.user.username;
 
-    // Calculate the number of days between start and end dates
+   
+    const user = await User.findOne({ username });
+    if (!user || user.remainingLeaves <= 0) {
+      return res.status(400).json({ error: 'No remaining leaves available. Leave limit exceeded.' });
+    }
+
+   
+    const existingLeave = await Leave.findOne({ username, startDate: { $lte: endDate }, endDate: { $gte: startDate } });
+    if (existingLeave) {
+      return res.status(400).json({ error: 'You have already applied for leave during these dates' });
+    }
+
+   
     const start = new Date(startDate);
     const end = new Date(endDate);
-  // Calculate the number of days between start and end dates (inclusive)
-const timeDifference = end.getTime() - start.getTime(); // Difference in milliseconds
-const numberOfDays = Math.ceil(timeDifference / (1000 * 3600 * 24)) + 1; // Add 1 to include both start and end dates
+    const timeDifference = end.getTime() - start.getTime();
+    const numberOfDays = Math.ceil(timeDifference / (1000 * 3600 * 24)) + 1;
 
-    // Fetching user document to get team lead information
+    if (user.remainingLeaves < numberOfDays) {
+      return res.status(400).json({ error: 'Not enough remaining leaves. Leave limit exceeded.' });
+    }
+app.get('/leave/remaining/:username', async (req, res) => {
+  const { username } = req.params;
+
+  try {
+   
     const user = await User.findOne({ username });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+   
+    const remainingLeaves = user.remainingLeaves;
+
+    res.json({ remainingLeaves });
+  } catch (error) {
+    console.error('Error fetching remaining leaves:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+    user.remainingLeaves -= numberOfDays;
+    await user.save();
+
+    
     const teamLead = user.assignedTeamLead;
 
+    
+    const teamLeadUser = await User.findById(teamLead.teamLeadId);
+    const teamLeadEmail = teamLeadUser.email;
+
     const newLeave = new Leave({ username, startDate, endDate, reason, teamLead, numberOfDays });
+
+   
     await newLeave.save();
 
+   
+    await sendEmailToTeamLead(teamLeadEmail, username, startDate, endDate, reason);
+
+    
     res.status(201).json({ message: 'Leave request submitted successfully' });
   } catch (error) {
     console.error(error);
@@ -224,12 +434,64 @@ const numberOfDays = Math.ceil(timeDifference / (1000 * 3600 * 24)) + 1; // Add 
   }
 });
 
-// Add this route to fetch leave details by username
-// Add this route to fetch all leaves applied by a user
-app.get('/leave/all/:username', authenticateUser, async (req, res) => {
+app.get('/leave/remaining/:username', async (req, res) => {
+  const { username } = req.params;
+
   try {
-    const { username } = req.params;
-    // Fetch all leave requests applied by the user
+   
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+   
+    const remainingLeaves = user.remainingLeaves;
+
+    res.json({ remainingLeaves });
+  } catch (error) {
+    console.error('Error fetching remaining leaves:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+app.get('/leave/leaves-info', authenticateUser, async (req, res) => {
+  try {
+    const username = req.user.username;
+    const user = await User.findOne({ username });
+    res.json({ totalLeaves: user.totalLeaves, remainingLeaves: user.remainingLeaves });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+const sendEmailToTeamLead = async (teamLeadEmail, username, startDate, endDate, reason) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'sairajdeep1454@gmail.com', 
+        pass: 'eewx azan baey rsxc', 
+      },
+    });
+
+    const mailOptions = {
+      from: 'sairajdeep1454@gmail.com',
+      to: teamLeadEmail,
+      subject: 'Leave Request',
+      text: `Dear Team Lead,\n\n${username} has applied for leave from ${startDate} to ${endDate} for the reason: ${reason}.\n\nRegards,\nLeave Management System`,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('Email sent to team lead');
+  } catch (error) {
+    console.error('Error sending email to team lead:', error);
+  }
+};
+
+app.get('/leave/all/applied', authenticateUser, async (req, res) => {
+  try {
+    const username = req.user.username;
     const leaves = await Leave.find({ username });
     res.json(leaves);
   } catch (error) {
@@ -238,13 +500,54 @@ app.get('/leave/all/:username', authenticateUser, async (req, res) => {
   }
 });
 
-// Add this route to handle leave approval or rejection
+
+app.get('/leave/all/:username', authenticateUser, async (req, res) => {
+  try {
+    const { username } = req.params;
+   
+    const leaves = await Leave.find({ username });
+    res.json(leaves);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 app.put('/leave/update/:leaveId', authenticateUser, async (req, res) => {
   try {
     const { leaveId } = req.params;
-    const { status } = req.body;
-    // Update leave status
-    await Leave.findByIdAndUpdate(leaveId, { status });
+    const { status, reason } = req.body; 
+
+  
+    const leave = await Leave.findById(leaveId);
+    if (!leave) {
+      return res.status(404).json({ error: 'Leave not found' });
+    }
+
+   
+    await Leave.findByIdAndUpdate(leaveId, { status, reason });
+
+   
+    const user = await User.findOne({ username: leave.username });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+   
+    if (status === 'rejected') {
+      user.remainingLeaves += leave.numberOfDays;
+      await user.save();
+    }
+
+   
+    await sendEmailToUser(user.email, leave.startDate, leave.endDate, status, reason);
+
+    
+    if (status === 'rejected') {
+      await Leave.findByIdAndDelete(leaveId);
+    }
+
     res.status(200).json({ message: 'Leave status updated successfully' });
   } catch (error) {
     console.error(error);
@@ -252,12 +555,64 @@ app.put('/leave/update/:leaveId', authenticateUser, async (req, res) => {
   }
 });
 
+
+
+const sendEmailToUser = async (userEmail, startDate, endDate, status, reason) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'sairajdeep1454@gmail.com', 
+        pass: 'eewx azan baey rsxc',
+      },
+    });
+
+    let subject, text;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const formattedStartDate = `${start.getDate()}-${start.getMonth() + 1}-${start.getFullYear()}`;
+    const formattedEndDate = `${end.getDate()}-${end.getMonth() + 1}-${end.getFullYear()}`;
+
+    if (status === 'approved') {
+      subject = 'Leave Approved';
+      text = `Your leave request from ${formattedStartDate} to ${formattedEndDate} (${calculateDays(startDate, endDate)} days) has been approved.\n\nRegards,\nLeave Management System`;
+    } else {
+      subject = 'Leave Rejected';
+      text = `Your leave request from ${formattedStartDate} to ${formattedEndDate} (${calculateDays(startDate, endDate)} days) has been rejected.\nReason: ${reason}\n\nRegards,\nLeave Management System`;
+    }
+
+    const mailOptions = {
+      from: 'sairajdeep1454@gmail.com',
+      to: userEmail,
+      subject,
+      text,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('Email sent to user');
+  } catch (error) {
+    console.error('Error sending email to user:', error);
+  }
+};
+
+
+
+const calculateDays = (startDate, endDate) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const timeDifference = end.getTime() - start.getTime();
+  return Math.ceil(timeDifference / (1000 * 3600 * 24)) + 1;
+};
+
+
+
+
 app.get('/chat/:receiverUsername', authenticateUser, async (req, res) => {
   try {
     const senderUsername = req.user.username;
     const receiverUsername = req.params.receiverUsername;
 
-    // Fetch chat messages between sender and receiver
+    
     const messages = await ChatMessage.find({
       $or: [
         { sender: senderUsername, receiver: receiverUsername },
@@ -272,13 +627,13 @@ app.get('/chat/:receiverUsername', authenticateUser, async (req, res) => {
   }
 });
 
-// Add this route to send a chat message
+
 app.post('/chat', authenticateUser, async (req, res) => {
   try {
     const { receiverUsername, message } = req.body;
     const senderUsername = req.user.username;
 
-    // Save the chat message
+   
     const newMessage = new ChatMessage({ sender: senderUsername, receiver: receiverUsername, message });
     await newMessage.save();
 
@@ -316,9 +671,21 @@ app.get('/get-suggestions', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-// Route to handle team lead submission of reviews
-// ... (existing code)
-// Add this route to fetch saved surveys
+app.post('/admin/savedsurveys', async (req, res) => {
+  const { title, questions } = req.body;
+
+  try {
+    const newSurvey = new Survey({ title, questions });
+    await newSurvey.save();
+
+    res.status(201).json(newSurvey);
+  } catch (error) {
+    console.error('Error creating survey:', error.message);
+    res.status(500).json({ message: 'Error creating survey' });
+  }
+});
+
+
 app.get('/admin/savedsurveys', async (req, res) => {
   try {
     const savedSurveys = await Survey.find();
@@ -328,8 +695,30 @@ app.get('/admin/savedsurveys', async (req, res) => {
     res.status(500).json({ message: 'Error fetching saved surveys' });
   }
 });
+app.put('/admin/savedsurveys/:surveyId', async (req, res) => {
+  const { surveyId } = req.params;
+  const { title, questions } = req.body;
 
-// Route to handle submitting a review
+  try {
+  
+    const updatedSurvey = await Survey.findByIdAndUpdate(
+      surveyId,
+      { title, questions },
+      { new: true }
+    );
+
+    if (!updatedSurvey) {
+      return res.status(404).json({ message: 'Survey not found' });
+    }
+
+    res.status(200).json(updatedSurvey);
+  } catch (error) {
+    console.error('Error updating survey:', error.message);
+    res.status(500).json({ message: 'Error updating survey' });
+  }
+});
+
+
 app.post('/submitreview', async (req, res) => {
   try {
     const { username, surveyTitle, review } = req.body;
@@ -339,7 +728,7 @@ app.post('/submitreview', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Find the survey response for the given title
+    
     const surveyResponse = user.surveyResponses.find(
       (response) => response.surveyTitle === surveyTitle
     );
@@ -348,10 +737,10 @@ app.post('/submitreview', async (req, res) => {
       return res.status(404).json({ message: 'Survey response not found' });
     }
 
-    // Add the review to the survey response
+   
     surveyResponse.reviews.push(review);
 
-    // Save the updated user document
+   
     await user.save();
 
     res.status(200).json({ message: 'Review submitted successfully' });
@@ -361,13 +750,7 @@ app.post('/submitreview', async (req, res) => {
   }
 });
 
-// Backend: Add a route to fetch user profile details
 
-// Import necessary modules and libraries (already imported in your code)
-
-// ... (existing code)
-
-// Fetch user profile details
 app.get('/profile', authenticateUser, async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -386,7 +769,7 @@ app.get('/profile', authenticateUser, async (req, res) => {
       assignedTeamLead: user.assignedTeamLead,
       assignedSurveys: user.assignedSurveys,
       surveyResponses: user.surveyResponses,
-      // Add any other fields you want to include in the profile
+     
     };
 
     res.status(200).json(userProfile);
@@ -396,9 +779,7 @@ app.get('/profile', authenticateUser, async (req, res) => {
   }
 });
 
-// ... (existing code)
 
-// Route to handle deleting a review
 app.post('/deletereview', async (req, res) => {
   try {
     const { username, surveyTitle } = req.body;
@@ -408,7 +789,7 @@ app.post('/deletereview', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Find the survey response for the given title
+    
     const surveyResponse = user.surveyResponses.find(
       (response) => response.surveyTitle === surveyTitle
     );
@@ -417,10 +798,10 @@ app.post('/deletereview', async (req, res) => {
       return res.status(404).json({ message: 'Survey response not found' });
     }
 
-    // Clear the reviews array for the survey response
+   
     surveyResponse.reviews = [];
 
-    // Save the updated user document
+   
     await user.save();
 
     res.status(200).json({ message: 'Review deleted successfully' });
@@ -430,35 +811,22 @@ app.post('/deletereview', async (req, res) => {
   }
 });
 
-// ... (existing code)
-
-// Inside your existing Express app
-
-// ... (existing code)
-
-// Add this route to handle deleting surveys from both User and Survey schemas
-// Inside your Express backend code
-
-// Import necessary modules and libraries (already imported in your code)
-
-// ... (existing code)
-//sss
 
 app.post('/sendBackupResponses', async (req, res) => {
   try {
     const { userEmail, username } = req.body;
 
-    // Find the user by username
+    
     const user = await User.findOne({ username });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Retrieve backup responses for the user
+   
     const backupResponses = await BackupResponse.find({ username });
 
-    // Prepare email content
+   
     let emailContent = `
       <html>
         <head>
@@ -502,7 +870,7 @@ app.post('/sendBackupResponses', async (req, res) => {
                         <div class="answer">Answer: ${response.answer}</div>`;
       });
 
-      // Include rating and review details
+     
       if (backup.ratings && backup.ratings.length > 0) {
         emailContent += '<div class="rating"><strong>Ratings:</strong><br>';
         backup.ratings.forEach((rating, index) => {
@@ -513,7 +881,7 @@ app.post('/sendBackupResponses', async (req, res) => {
         emailContent += '</div>';
       }
 
-      // Include assigned team lead details
+     
       if (backup.assignedTeamLead) {
         emailContent += `<div>Assigned Team Lead: ${backup.assignedTeamLead.username}</div>`;
       }
@@ -521,20 +889,20 @@ app.post('/sendBackupResponses', async (req, res) => {
       emailContent += `</div><hr>`;
     });
 
-    // Calculate average rating
+    
     const averageRating = totalRatings / numberOfReviews;
     emailContent += `<div class="average-rating">Average Rating: ${averageRating.toFixed(2)}</div>`;
 
     emailContent += `</body></html>`;
 
-    // Generate PDF from email content
+    
     pdf.create(emailContent).toBuffer(async (err, buffer) => {
       if (err) {
         console.error('Error generating PDF:', err);
         return res.status(500).json({ message: 'Error generating PDF' });
       }
 
-      // Send email to admin with backup responses and PDF attachment
+      
       const mailOptions = {
         from: 'HR Department <hr@example.com>',
         to: userEmail,
@@ -549,7 +917,7 @@ app.post('/sendBackupResponses', async (req, res) => {
         ],
       };
 
-      // Send the email
+      
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
           console.error('Error sending email:', error);
@@ -565,25 +933,21 @@ app.post('/sendBackupResponses', async (req, res) => {
     res.status(500).json({ message: 'Error sending backup responses' });
   }
 });
-// ... (existing code)
 
-// Route to handle survey upload
-// Updated backend code
-// Add this route to delete a survey
 app.delete('/admin/surveys/:surveyId', async (req, res) => {
   try {
     const surveyId = req.params.surveyId;
 
-    // Check if the survey exists
+    
     const existingSurvey = await Survey.findById(surveyId);
     if (!existingSurvey) {
       return res.status(404).json({ message: 'Survey not found' });
     }
 
-    // Delete the survey from the Survey schema
+   
     await Survey.findByIdAndDelete(surveyId);
 
-    // Update the assignedSurveys field for each user
+    
     const usersToUpdate = await User.find({ 'assignedSurveys.surveyId': surveyId });
 
     usersToUpdate.forEach(async (user) => {
@@ -600,15 +964,14 @@ app.delete('/admin/surveys/:surveyId', async (req, res) => {
 
 
 
-// ... (existing code)
-// Add this route to support searching team leads
+
 app.get('/teamleads', async (req, res) => {
   try {
     const { search } = req.query;
-   // Log the search query
+  
     const query = search ? { username: { $regex: search, $options: 'i' } } : {};
     const teamLeads = await User.find({ ...query, role: 'teamlead' });
-     // Log the fetched team leads
+    
     res.status(200).json(teamLeads);
   } catch (error) {
     console.error('Error fetching team leads:', error.message);
@@ -616,28 +979,27 @@ app.get('/teamleads', async (req, res) => {
   }
 });
 
-// ... (existing code)
-// Add this route to fetch survey responses and calculate percentages
+
 app.get('/admin/surveys/:surveyId/responses', async (req, res) => {
   try {
     const surveyId = req.params.surveyId;
 
-    // Find the survey by ID
+    
     const survey = await Survey.findById(surveyId);
 
     if (!survey) {
       return res.status(404).json({ message: 'Survey not found' });
     }
 
-    // Get all survey responses
+   
     const surveyResponses = await User.find({ 'surveyResponses.surveyTitle': survey.title });
 
-    // Calculate percentages for each question
+    
     const percentages = survey.questions.map((question) => {
       const totalResponses = surveyResponses.length;
       const optionCounts = {};
 
-      // Count the number of times each option is chosen
+     
       surveyResponses.forEach((response) => {
         const userResponse = response.surveyResponses.find((sr) => sr.surveyTitle === survey.title);
         if (userResponse) {
@@ -648,7 +1010,7 @@ app.get('/admin/surveys/:surveyId/responses', async (req, res) => {
         }
       });
 
-      // Calculate percentages
+     
       const percentagesForQuestion = {};
       Object.keys(optionCounts).forEach((option) => {
         percentagesForQuestion[option] = (optionCounts[option] / totalResponses) * 100;
@@ -660,12 +1022,12 @@ app.get('/admin/surveys/:surveyId/responses', async (req, res) => {
       };
     });
 
-    // Decrement the surveyCount for users who completed the survey
+   
     surveyResponses.forEach(async (response) => {
-      const user = await User.findById(response.userId); // Corrected: Use the correct property
+      const user = await User.findById(response.userId); 
 
       if (user && user.surveyCount > 0) {
-        user.surveyCount -= 1; // Decrement surveyCount
+        user.surveyCount -= 1; 
         await user.save();
       }
     });
@@ -678,19 +1040,19 @@ app.get('/admin/surveys/:surveyId/responses', async (req, res) => {
   }
 });
 
-// Add this route to update the role of a user
+
 app.post('/admin/updateuserrole', async (req, res) => {
   try {
     const { username, role } = req.body;
 
-    // Find the user by their username
+   
     const user = await User.findOne({ username });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update the user's role
+    
     user.role = role;
     await user.save();
 
@@ -701,7 +1063,7 @@ app.post('/admin/updateuserrole', async (req, res) => {
   }
 });
 
-// Fetch assigned users for a team lead
+
 app.get('/teamleads/:teamLeadId', async (req, res) => {
   try {
     const teamLeadId = req.params.teamLeadId;
@@ -719,14 +1081,12 @@ app.get('/teamleads/:teamLeadId', async (req, res) => {
   }
 });
 
-// ... (existing code)
 
-// Route to handle team lead assignment
 app.post('/assignteamlead', async (req, res) => {
   try {
     const { username, teamLeadUsername } = req.body;
 
-    // Find the user and team lead by their usernames
+   
     const user = await User.findOne({ username });
     const teamLead = await User.findOne({ username: teamLeadUsername, role: 'teamlead' });
 
@@ -734,7 +1094,7 @@ app.post('/assignteamlead', async (req, res) => {
       return res.status(404).json({ message: 'User or Team Lead not found' });
     }
 
-    // Assign the team lead to the user (you can customize this logic based on your data structure)
+    
     user.assignedTeamLead = { teamLeadId: teamLead._id, username: teamLead.username };
     await user.save();
 
@@ -745,17 +1105,12 @@ app.post('/assignteamlead', async (req, res) => {
   }
 });
 
-// ... (existing code)
 
-
-
-// Add this route to handle team lead assignment
-// Add this route to handle team lead assignment
 app.post('/assignteamlead', async (req, res) => {
   try {
     const { username, teamLeadUsername } = req.body;
 
-    // Find the user and team lead by their usernames
+    
     const user = await User.findOne({ username });
     const teamLead = await User.findOne({ username: teamLeadUsername, role: 'teamlead' });
 
@@ -763,7 +1118,7 @@ app.post('/assignteamlead', async (req, res) => {
       return res.status(404).json({ message: 'User or Team Lead not found' });
     }
 
-    // Assign the team lead to the user (you can customize this logic based on your data structure)
+    
     user.assignedTeamLead = { teamLeadId: teamLead._id, username: teamLead.username };
     await user.save();
 
@@ -774,7 +1129,7 @@ app.post('/assignteamlead', async (req, res) => {
   }
 });
 
-// Route to handle survey upload
+
 app.post('/surveys', async (req, res) => {
   try {
     const { title, questions, accessibleUsers } = req.body;
@@ -783,20 +1138,20 @@ app.post('/surveys', async (req, res) => {
       return res.status(400).json({ message: 'Title, questions, and accessibleUsers are required' });
     }
 
-    // When assigning a survey to a user
+   
     const newSurvey = new Survey({ title, questions, accessibleUsers });
     await newSurvey.save();
 
-    // Update the assignedSurveys field for each user and increment surveyCount
+    
     const usersToUpdate = await User.find({ _id: { $in: accessibleUsers } });
 
     usersToUpdate.forEach(async (user) => {
       user.assignedSurveys.push({ surveyId: newSurvey._id, title: newSurvey.title });
-      user.surveyCount += 1; // Increment the surveyCount
+      user.surveyCount += 1; 
       await user.save();
     });
 
-    // Respond with success message
+   
     res.status(201).json({ message: 'Survey uploaded successfully' });
 
   } catch (error) {
@@ -809,36 +1164,36 @@ app.post('/surveyresponse', async (req, res) => {
   try {
     const { userId, surveyTitle, responses } = req.body;
 
-    // Find the user by ID
+   
     const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if the user already has responses for this surveyTitle
+   
     const existingSurveyResponseIndex = user.surveyResponses.findIndex(
       (response) => response.surveyTitle === surveyTitle
     );
 
     if (existingSurveyResponseIndex !== -1) {
-      // Update existing survey response
+     
       user.surveyResponses[existingSurveyResponseIndex].responses = responses;
     } else {
-      // Add new survey response
+     
       user.surveyResponses.push({ surveyTitle, responses });
 
-      // Decrement surveyCount when a new survey response is added
+     
       user.surveyCount -= 1;
     }
 
-    // Save the user document
+   
     await user.save();
 
-    // Remove the user from the accessibleUsers list for the survey
+  
     const survey = await Survey.findOne({ title: surveyTitle });
     if (survey) {
-      // Remove the user's ID from the accessibleUsers array
+     
       survey.accessibleUsers = survey.accessibleUsers.filter((id) => id.toString() !== userId);
       await survey.save();
     }
@@ -853,12 +1208,7 @@ app.post('/surveyresponse', async (req, res) => {
 
 
 
-// ... (existing code)
-// Updated backend code
 
-// ... (existing code)
-
-// Fetch all users
 app.get('/users', async (req, res) => {
   try {
     const users = await User.find();
@@ -869,10 +1219,7 @@ app.get('/users', async (req, res) => {
   }
 });
 
-// ... (existing code)
-// Modify the '/userdetails/:userId' endpoint in your backend code
 
-// Modify the '/userdetails/:username' endpoint in your backend code
 
 app.get('/userdetails/:username', async (req, res) => {
   try {
@@ -883,7 +1230,7 @@ app.get('/userdetails/:username', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Include survey responses in the response
+    
     const userDetails = {
       username: user.username,
       employeeId: user.employeeId,
@@ -910,7 +1257,7 @@ app.get('/usersadmin', async (req, res) => {
   }
 });
 
-// Add this route to fetch assigned team lead details
+
 app.get('/userdetails/:username/assignedteamlead', async (req, res) => {
   try {
     const username = req.params.username;
@@ -936,7 +1283,7 @@ app.get('/userdetails/:username/assignedteamlead', async (req, res) => {
 
 const secretKey = 'PCP';
 
-// Admin Signup
+
 app.post('/auth/adminsignup', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -958,11 +1305,21 @@ app.post('/auth/adminsignup', async (req, res) => {
   }
 });
 
-// User Signup
-// User Signup
+
+const generateRandomPassword = () => {
+  const length = 8; 
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; 
+  let randomPassword = "";
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    randomPassword += charset[randomIndex];
+  }
+  return randomPassword;
+};
+
 app.post('/auth/signup', async (req, res) => {
   try {
-    const { username, email, employeeId, password } = req.body;
+    const { username, email, employeeId, phoneNumber } = req.body;
 
     const existingUser = await User.findOne({ $or: [{ username }, { email }, { employeeId }] });
 
@@ -970,12 +1327,13 @@ app.post('/auth/signup', async (req, res) => {
       return res.status(409).json({ message: 'User already exists' });
     }
 
+    const password = generateRandomPassword(); 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = new User({ username, email, employeeId, password: hashedPassword, role: 'user' });
+    const user = new User({ username, email, employeeId, password: hashedPassword, role: 'user', phoneNumber });
     await user.save();
 
-    // Send confirmation email to the user
+    
     const mailOptions = {
       from: 'hr@example.com', // HR's email address
       to: user.email, // User's email address
@@ -999,19 +1357,20 @@ app.post('/auth/signup', async (req, res) => {
   }
 });
 
-// Add this route to handle deleting a survey response
+
+
 app.delete('/deletesurveyresponse', async (req, res) => {
   try {
     const { username, surveyTitle } = req.body;
 
-    // Find the user by their username
+   
     const user = await User.findOne({ username });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Find the survey response for the given title
+    
     const surveyResponseIndex = user.surveyResponses.findIndex(
       (response) => response.surveyTitle === surveyTitle
     );
@@ -1020,7 +1379,7 @@ app.delete('/deletesurveyresponse', async (req, res) => {
       return res.status(404).json({ message: 'Survey response not found' });
     }
 
-    // Move the deleted response along with ratings, reviews, and assigned team lead to backupresponses schema
+    
     const deletedResponse = user.surveyResponses.splice(surveyResponseIndex, 1)[0];
     const backupResponse = new BackupResponse({
       username: user.username,
@@ -1030,11 +1389,11 @@ app.delete('/deletesurveyresponse', async (req, res) => {
         rating: review.rating,
         reviewText: review.reviewText,
       })),
-      assignedTeamLead: user.assignedTeamLead, // Assuming assignedTeamLead is an object with teamLeadId and username
+      assignedTeamLead: user.assignedTeamLead, 
     });
     await backupResponse.save();
 
-    // Save the updated user document
+   
     await user.save();
 
     res.status(200).json({ message: 'Survey response deleted successfully' });
@@ -1048,13 +1407,7 @@ app.delete('/deletesurveyresponse', async (req, res) => {
 
 
 
-// Import necessary modules and libraries (already imported in your code)
 
-// ... (existing code)
-
-// Update Password route
-// Update Password route without authenticateUser middleware
-// Update Password route
 app.put('/auth/updatepassword', async (req, res) => {
   try {
     const { currentPassword, newPassword, userId } = req.body;
@@ -1066,20 +1419,20 @@ app.put('/auth/updatepassword', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if the current password provided matches the user's current password
+    
     const passwordMatch = await bcrypt.compare(currentPassword, user.password);
 
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Current password is incorrect' });
     }
 
-    // Hash the new password
+    
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update the user's password and password change timestamp in the database
+   
     user.passwordChangeCount += 1;
-    user.passwordChangedAt = Date.now(); // Add this line to update the password change timestamp
-    user.password = hashedNewPassword; // Update the user's password with the new hashed password
+    user.passwordChangedAt = Date.now(); 
+    user.password = hashedNewPassword; 
     await user.save();
 
     res.status(200).json({ message: 'Password updated successfully' });
@@ -1089,31 +1442,25 @@ app.put('/auth/updatepassword', async (req, res) => {
   }
 });
 
-// ... (existing code)
 
-
-// Assuming this is in your existing backend code
-
-// Team Lead Signup
-// Team Lead Signup
 app.post('/auth/teamleadsignup', async (req, res) => {
   try {
     const { username, email, employeeId, password } = req.body;
 
-    // Check if the Team Lead already exists
+    
     const existingTeamLead = await User.findOne({ username, role: 'teamlead' });
     if (existingTeamLead) {
       return res.status(409).json({ message: 'Team Lead already exists' });
     }
 
-    // Hash the password
+    
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new Team Lead user
+    
     const teamLead = new User({ username, email, employeeId, password: hashedPassword, role: 'teamlead' });
     await teamLead.save();
 
-    // Send confirmation email to the Team Lead
+    
     const mailOptions = {
       from: 'hr@example.com', // HR's email address
       to: teamLead.email, // Team Lead's email address
@@ -1136,8 +1483,7 @@ app.post('/auth/teamleadsignup', async (req, res) => {
   }
 });
 
-// Login route
-// Login route
+
 app.post('/auth/login', async (req, res) => {
   try {
     const { username, employeeId, password } = req.body;
@@ -1181,8 +1527,7 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
-// Add a route to fetch all surveys
-// Fetch all surveys
+
 app.get('/surveys', async (req, res) => {
   try {
     const surveys = await Survey.find();
@@ -1195,7 +1540,7 @@ app.get('/surveys', async (req, res) => {
 
 
 
-// Add this route to fetch all surveys
+
 app.get('/admin/surveys', async (req, res) => {
   try {
     const surveys = await Survey.find();

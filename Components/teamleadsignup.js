@@ -14,19 +14,19 @@ const TeamLeadSignupScreen = () => {
   const navigation = useNavigation();
 
   const handleLeadSignup = () => {
-    // Validate input fields
+  
     if (!username || !email || !employeeId || !password) {
       Alert.alert('Error', 'Please fill in all the fields.');
       return;
     }
 
-    // Validate email format
+   
     if (!isValidEmail(email)) {
       Alert.alert('Error', 'Please enter a valid email address.');
       return;
     }
 
-    // Validate employee ID to contain only numbers
+    
     if (!/^[0-9]+$/.test(employeeId)) {
       Alert.alert('Error', 'Employee ID should only contain numbers.');
       return;

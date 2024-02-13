@@ -34,17 +34,20 @@ const UserDetailsScreen = ({ route }) => {
   const [isEditingTeamLead, setIsEditingTeamLead] = useState(false);
   const [selectedUserRole, setSelectedUserRole] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
-  const [refreshPage, setRefreshPage] = useState(false); // State variable for refreshing the page
+  const [refreshPage, setRefreshPage] = useState(false); 
 
   const navigation = useNavigation();
   const handleChatButtonPress = () => {
     navigation.navigate('ChatScreen', { username: userDetails.username });
   };
-
+  const handleLeavesDetailsNavigation = () => {
+    navigation.navigate('LeavesDetailsScreen', { username: userDetails.username });
+  };
+  
   useEffect(() => {
     fetchSurveyData();
     fetchAssignedTeamLeadDetails();
-  }, [refreshPage]); // Add refreshPage to the dependency array
+  }, [refreshPage]); 
 
   const handleSendBackup = async () => {
     try {
@@ -133,7 +136,7 @@ const UserDetailsScreen = ({ route }) => {
         teamLeadUsername: selectedTeamLead,
       });
 
-      setRefreshPage(!refreshPage); // Update refreshPage to trigger a refresh
+      setRefreshPage(!refreshPage); 
       setAvailableTeamLeads([]);
       setAssignedTeamLead(selectedTeamLead);
       setIsEditingTeamLead(false);
@@ -159,7 +162,7 @@ const UserDetailsScreen = ({ route }) => {
         role: selectedUserRole,
       });
 
-      setRefreshPage(!refreshPage); // Update refreshPage to trigger a refresh
+      setRefreshPage(!refreshPage);
       Alert.alert('Success', 'User role updated successfully');
     } catch (error) {
       console.error('Error updating user role:', error);
@@ -170,15 +173,15 @@ const UserDetailsScreen = ({ route }) => {
   const renderSurveyItem = ({ item }) => (
     <PaperCard style={styles.surveyCard}>
       <PaperCard.Content>
-        <Text>Survey Response</Text>
         <Text style={styles.surveyTitle}>{item.surveyTitle}</Text>
         {item.responses.map((response, index) => (
-          <View key={index}>
-            <Text>{`Question: ${response.question}`}</Text>
-            <Text>{`Answer: ${response.answer}`}</Text>
+          <View key={index} style={styles.questionContainer}>
+            <Text style={styles.question}>{`Question ${index + 1}: ${response.question}`}</Text>
+            <Text style={styles.answer}>{`Answer: ${response.answer}`}</Text>
+            {index < item.responses.length - 1 && <View style={styles.divider} />}
           </View>
         ))}
-        {item.reviews && item.reviews.length > 0 && (
+        {item.reviews && item.reviews.length > 0 ? (
           <View>
             <Text style={styles.reviewTitle}>Reviews:</Text>
             {item.reviews.map((review, index) => (
@@ -188,15 +191,26 @@ const UserDetailsScreen = ({ route }) => {
               </View>
             ))}
           </View>
+        ) : (
+          <Text style={styles.reviewText}>Pending Review</Text>
         )}
       </PaperCard.Content>
-      <PaperCard.Actions>
-        <PaperButton onPress={() => handleDeleteSurveyResponse(item.surveyTitle)} mode="contained" style={styles.button}>
-          Backup Survey Response
-        </PaperButton>
-      </PaperCard.Actions>
+      {item.reviews && item.reviews.length > 0 && (
+        <PaperCard.Actions>
+          <PaperButton
+            onPress={() => handleDeleteSurveyResponse(item.surveyTitle)}
+            mode="contained"
+            style={styles.button}
+          >
+            Backup Survey Response
+          </PaperButton>
+        </PaperCard.Actions>
+      )}
     </PaperCard>
   );
+  
+  
+  
 
   const renderUserDetailsContainer = () => (
     <FlatList
@@ -234,44 +248,6 @@ const UserDetailsScreen = ({ route }) => {
                   Edit
                 </PaperButton>
               )}
-            </View>
-          
-            <View style={styles.tableRow}>
-              <Text style={styles.labelText}>Select Role:</Text>
-            </View>
-           
-            <RNPickerSelect
-              value={selectedUserRole}
-              onValueChange={(value) => setSelectedUserRole(value)}
-              items={[
-                { label: "teamlead", value: "teamlead" },
-                { label: "user", value: "user" },
-              ]}
-            />
-
-            <PaperButton onPress={handleUpdateUserRole} mode="contained" style={styles.button}>
-              Update User Role
-            </PaperButton>
-            <PaperButton
-              onPress={handleChatButtonPress}
-              mode="contained"
-              style={styles.button}
-              icon={({ size, color }) => (
-                <Icon name="comments" size={size} color={color} />
-              )}
-            >
-              Start Chat
-            </PaperButton>
-            <View style={styles.v}>
-              <PaperTextInput
-                style={styles.searchBar}
-                placeholder="Enter Email"
-                value={adminEmail}
-                onChangeText={setAdminEmail}
-              />
-              <PaperButton mode="contained" style={styles.button} onPress={handleSendBackup}>
-                Send Backup Survey Response
-              </PaperButton>
             </View>
             {isEditingTeamLead && (
               <>
@@ -313,6 +289,48 @@ const UserDetailsScreen = ({ route }) => {
                 </PaperButton>
               </>
             )}
+            <View style={styles.tableRow}>
+              <Text style={styles.labelText}>Select Role:</Text>
+            </View>
+           
+            <RNPickerSelect
+              value={selectedUserRole}
+              onValueChange={(value) => setSelectedUserRole(value)}
+              items={[
+                { label: "teamlead", value: "teamlead" },
+                { label: "user", value: "user" },
+              ]}
+            />
+
+            <PaperButton onPress={handleUpdateUserRole} mode="contained" style={styles.button}>
+              Update User Role
+            </PaperButton>
+            <PaperButton
+              onPress={handleChatButtonPress}
+              mode="contained"
+              style={styles.button}
+              icon={({ size, color }) => (
+                <Icon name="comments" size={size} color={color} />
+              )}
+            >
+              Start Chat
+            </PaperButton>
+             <PaperButton    mode="contained"  onPress={handleLeavesDetailsNavigation} style={styles.button}>
+  View Approved Leaves
+</PaperButton>
+
+            <View style={styles.v}>
+              <PaperTextInput
+                style={styles.searchBar}
+                placeholder="Enter Email"
+                value={adminEmail}
+                onChangeText={setAdminEmail}
+              />
+              <PaperButton mode="contained" style={styles.button} onPress={handleSendBackup}>
+                Send Backup Survey Response
+              </PaperButton>
+            </View>
+          
           </PaperCard.Content>
         </PaperCard>
       )}
@@ -353,6 +371,21 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     elevation: 4,
     backgroundColor: '#FFFFFF',
+  }, questionContainer: {
+    marginBottom: 20,
+  },
+  question: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  answer: {
+    marginLeft: 10,
+    marginTop: 5,
+  },
+  divider: {
+    borderBottomWidth: 1,
+    borderColor: 'gray',
+    marginVertical: 10,
   },
   headerText: {
     fontSize: 20,
@@ -393,7 +426,7 @@ margin:10,
     backgroundColor: '#FFFFFF',
   },
   editTeamLeadContainer: {
-    // Add styles for the container when editing team lead if needed
+   
   },
   surveyCard: {
     marginVertical: 10,
@@ -429,13 +462,13 @@ margin:10,
   teamLeadText: {
     color: 'black',
     textAlign:'center',
-    // Default text color
+  
   },
   selectedTeamLead: {
-    backgroundColor: 'green', // Background color for the selected lead
+    backgroundColor: 'green', 
   },
   selectedTeamLeadText: {
-    color: 'white', // Text color for the selected lead
+    color: 'white', 
   },
 });
 export default UserDetailsScreen;

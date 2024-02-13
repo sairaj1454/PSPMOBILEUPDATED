@@ -5,11 +5,11 @@ import {
   Text,
   TouchableWithoutFeedback,
   SafeAreaView,
-  ScrollView, // Import ScrollView component
+  ScrollView, 
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Card } from 'react-native-paper'; // Import Card component from react-native-paper
+import { Card } from 'react-native-paper'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Profile from './profile';
 import ImageSliderWithText from './imageslider';
@@ -97,6 +97,9 @@ function HomeScreen() {
     const SP = () => {
       navigation.navigate('Submissions');
     }; 
+    const SD = () => {
+      navigation.navigate('ManageLeave');
+    }; 
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <SafeAreaView style={styles.safeArea}>
@@ -128,6 +131,20 @@ function HomeScreen() {
                   <TouchableWithoutFeedback  onPress={SP}>
                     <View style={styles.customButton}>
                       <Text style={styles.customButtonText}>View Submissions</Text>
+                    </View>
+                  </TouchableWithoutFeedback>
+                </Card.Content>
+              </Card>
+            </View>
+            <View>
+              <Card style={styles.containerBox}>
+                <Card.Content>
+                  <Text style={styles.containerBoxText}>
+                   Leave Management
+                  </Text>
+                  <TouchableWithoutFeedback  onPress={SD}>
+                    <View style={styles.customButton}>
+                      <Text style={styles.customButtonText}>Manage Leaves</Text>
                     </View>
                   </TouchableWithoutFeedback>
                 </Card.Content>
@@ -223,10 +240,10 @@ color:'gray',
   },
   additionalContentCard: {
     margin: 10,
-    marginTop: 20, // Adjust the margin as needed
+    marginTop: 20, 
     borderRadius: 10,
     elevation: 20,
     backgroundColor:'white',
-     // Reduce the elevation if needed
+     
   },
 });

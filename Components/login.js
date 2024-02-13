@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Button, ActivityIndicator, Snackbar } from 'react-native-paper';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Icon from 'react-native-vector-icons/FontAwesome'; // Import FontAwesome icons
+import Icon from 'react-native-vector-icons/FontAwesome'; 
 import { API_BASE_URL } from './config';
 
 const LoginScreen = () => {
@@ -57,7 +57,7 @@ const LoginScreen = () => {
             navigation.navigate('TeamLeadHome');
           }
   
-          // Clear the entered details in TextInput
+          
           setIdentifier('');
           setPassword('');
         }
@@ -71,8 +71,8 @@ const LoginScreen = () => {
   };
   
 
-  const handleSignup = () => {
-    navigation.navigate('adminsignup');
+  const handleForgetPassword = () => {
+    navigation.navigate('forgetpassword');
   };
 
   const onDismissSnackbar = () => {
@@ -127,7 +127,9 @@ const LoginScreen = () => {
         <Text style={styles.loginText}>LOGIN</Text>
       </Pressable>
 
-      
+      <Text style={styles.link} onPress={  handleForgetPassword}>
+        Forget Password?
+        </Text>
 
       <Snackbar
         visible={snackbarVisible}

@@ -47,7 +47,7 @@ const SelectUsersPage = ({ route, navigation }) => {
       return;
     }
   
-    // Check if any of the selected users have a survey count greater than 0
+   
     const usersWithSurveyCountMoreThanZero = selectedUsers.filter((user) => user.surveyCount > 0);
   
     if (usersWithSurveyCountMoreThanZero.length > 0) {

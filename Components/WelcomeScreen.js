@@ -6,12 +6,12 @@ const { width, height } = Dimensions.get('window');
 
 const WelcomeScreen = ({ navigation }) => {
   useEffect(() => {
-    // Automatically navigate to the login screen after a delay (e.g., 2 seconds)
+   
     const timeout = setTimeout(() => {
       navigation.navigate('Login');
-    }, 5000); // Adjust the delay as needed
+    }, 5000); 
 
-    return () => clearTimeout(timeout); // Clear the timeout when the component unmounts
+    return () => clearTimeout(timeout); 
   }, [navigation]);
 
   return (

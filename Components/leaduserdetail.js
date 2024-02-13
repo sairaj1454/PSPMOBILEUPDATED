@@ -1,16 +1,48 @@
-// ... (existing imports)
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView,Alert } from 'react-native';
-import { Button, Card, Title, Paragraph, IconButton } from 'react-native-paper'; // Importing React Native Paper components
+import { View, Text, StyleSheet, TextInput, ScrollView, Alert } from 'react-native';
+import { Button, Card, Title, Paragraph, IconButton } from 'react-native-paper'; 
 import axios from 'axios';
 import { API_BASE_URL } from './config';
-import { Rating } from 'react-native-ratings'; 
+import { Rating } from 'react-native-ratings';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LUserDetail = ({ route }) => {
   const { username } = route.params;
   const [userDetails, setUserDetails] = useState(null);
   const [reviewText, setReviewText] = useState('');
-  const [rating, setRating] = useState(5); // Default rating
+  const [rating, setRating] = useState(5); 
+
+ 
+  useEffect(() => {
+    const loadReviewData = async () => {
+      try {
+        const savedReviewText = await AsyncStorage.getItem('reviewText');
+        const savedRating = await AsyncStorage.getItem('rating');
+        if (savedReviewText !== null) {
+          setReviewText(savedReviewText);
+        }
+        if (savedRating !== null) {
+          setRating(parseFloat(savedRating));
+        }
+      } catch (error) {
+        console.error('Error loading review data:', error);
+      }
+    };
+    loadReviewData();
+  }, []);
+
+ 
+  useEffect(() => {
+    const saveReviewData = async () => {
+      try {
+        await AsyncStorage.setItem('reviewText', reviewText);
+        await AsyncStorage.setItem('rating', rating.toString());
+      } catch (error) {
+        console.error('Error saving review data:', error);
+      }
+    };
+    saveReviewData();
+  }, [reviewText, rating]);
 
   const fetchUserDetails = async () => {
     try {
@@ -49,7 +81,7 @@ const LUserDetail = ({ route }) => {
   
       fetchUserDetails();
       setReviewText('');
-      setRating(5); // Set default rating for the next review
+      setRating(5); 
     } catch (error) {
       console.error('Error submitting review:', error);
     }
@@ -83,6 +115,7 @@ const LUserDetail = ({ route }) => {
       console.error('Error deleting review:', error);
     }
   };
+
   if (!userDetails) {
     return <Text>Loading...</Text>;
   }
@@ -117,13 +150,16 @@ const LUserDetail = ({ route }) => {
             <Card.Content>
               <Title>{response.surveyTitle}</Title>
   
-              {/* Displaying question and answer without DataTable */}
+            
               {response.responses.map((answer, answerIndex) => (
                 <View key={answerIndex} style={styles.questionAnswerContainer}>
-                  <Text style={styles.questionText}>{answer.question}</Text>
-                  <Text style={styles.answerText}>{answer.answer}</Text>
+                  <Text style={styles.questionText}>{`Question ${answerIndex + 1}: ${answer.question}`}</Text>
+                  <Text style={styles.answerText}>{`Answer: ${answer.answer}`}</Text>
                 </View>
               ))}
+  
+            
+              <View style={styles.divider} />
   
               <Title>Reviews:</Title>
               {response.reviews.map((review, reviewIndex) => (
@@ -139,38 +175,28 @@ const LUserDetail = ({ route }) => {
                     startingValue={review.rating}
                     readonly
                   />
-                  <IconButton
-                    icon="delete"
-                    color="red"
-                    size={20}
-                    onPress={() => deleteReview(response.surveyTitle)}
-                  />
                 </View>
               ))}
+              <View style={styles.divider} />
   
+            
               {!hasUserSubmittedReview(response.surveyTitle) && (
                 <>
+                
                   <TextInput
                     placeholder="Enter your review"
                     value={reviewText}
                     onChangeText={(text) => setReviewText(text)}
                   />
-                <Rating
-  type="star"
-  ratingCount={5}
-  imageSize={30}
-  startingValue={rating}
-  onFinishRating={(selectedRating) => setRating(selectedRating)}
-  style={{
-    paddingVertical: 10,
-    backgroundColor: 'lightgray', // Change background color
-    borderRadius: 10, // Add border radius
-  }}
-  ratingColor="gold" // Change color of selected stars
-  ratingBackgroundColor="white" // Change color of unselected stars
-  tintColor="lightgray" // Change color of the entire component
-/>
-
+                  <Rating
+                    type="star"
+                    ratingCount={5}
+                    imageSize={30}
+                    startingValue={rating}
+                    onFinishRating={(selectedRating) => setRating(selectedRating)}
+                    style={styles.rating}
+                  />
+                
                   <Button
                     mode="contained"
                     onPress={() => submitReview(response.surveyTitle, reviewText, rating)}
@@ -186,7 +212,6 @@ const LUserDetail = ({ route }) => {
       )}
     </ScrollView>
   );
-  
 };
 
 const styles = StyleSheet.create({
@@ -225,13 +250,11 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   reviewContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    marginBottom: 10,
   },
   maroonButton: {
     marginTop: 10,
-    backgroundColor: 'maroon', // Specify maroon color here
+    backgroundColor: 'maroon', 
   },
   questionAnswerContainer: {
     marginBottom: 10,
@@ -242,6 +265,17 @@ const styles = StyleSheet.create({
   },
   answerText: {
     marginLeft: 10,
+  },
+  rating: {
+    paddingVertical: 10,
+    backgroundColor: 'lightgray',
+    borderRadius: 10,
+  },
+  
+  divider: {
+    borderBottomWidth: 1,
+    borderColor: 'lightgray',
+    marginVertical: 10,
   },
 });
 

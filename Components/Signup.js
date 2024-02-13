@@ -9,7 +9,8 @@ const SignupScreen = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [employeeId, setEmployeeId] = useState('');
-  const [password, setPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+
   const navigation = useNavigation();
 
   const handleInputChange = (field, value) => {
@@ -23,8 +24,8 @@ const SignupScreen = () => {
       case 'employeeId':
         setEmployeeId(value);
         break;
-      case 'password':
-        setPassword(value);
+      case 'phoneNumber':
+        setPhoneNumber(value);
         break;
       default:
         break;
@@ -32,42 +33,24 @@ const SignupScreen = () => {
   };
 
   const handleSignup = () => {
-    // Validate input fields
-    if (!username || !email || !employeeId || !password) {
+   
+    if (!username || !email || !employeeId || !phoneNumber) {
       Alert.alert('Error', 'Please fill in all the fields.');
       return;
     }
 
-    // Validate username to contain only alphabets
-    if (!/^[a-zA-Z]+$/.test(username)) {
-      Alert.alert('Error', 'Username should only contain alphabets.');
-      return;
-    }
-
-    // Validate email format
-    if (!isValidEmail(email)) {
-      Alert.alert('Error', 'Please enter a valid email address.');
-      return;
-    }
-
-    // Validate employee ID to contain only numbers
-    if (!/^[0-9]+$/.test(employeeId)) {
-      Alert.alert('Error', 'Employee ID should only contain numbers.');
-      return;
-    }
-
     axios
-      .post(`${API_BASE_URL}/auth/signup`, { username, email, employeeId, password })
+      .post(`${API_BASE_URL}/auth/signup`, { username, email, employeeId, phoneNumber })
       .then((response) => {
         Alert.alert('Success', response.data.message, [
           {
             text: 'OK',
             onPress: () => {
-              // Reset the input fields
+             
               handleInputChange('username', '');
               handleInputChange('email', '');
               handleInputChange('employeeId', '');
-              handleInputChange('password', '');
+              handleInputChange('phoneNumber', '');
             },
           },
         ]);
@@ -80,12 +63,6 @@ const SignupScreen = () => {
 
   const handleTeamleadSignups = () => {
     navigation.navigate('adminsignup');
-  };
-
-  const isValidEmail = (email) => {
-    // Regular expression for validating an Email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
   };
 
   return (
@@ -120,16 +97,17 @@ const SignupScreen = () => {
             value={employeeId}
           />
         </View>
-        <View key="password" style={styles.inputView}>
+        <View key="phoneNumber" style={styles.inputView}>
           <TextInput
             style={styles.inputText}
-            placeholder="Password"
+            placeholder="Phone Number"
             placeholderTextColor="maroon"
-            secureTextEntry
-            onChangeText={(text) => handleInputChange('password', text)}
-            value={password}
+            onChangeText={(text) => handleInputChange('phoneNumber', text)}
+            value={phoneNumber}
+            keyboardType="phone-pad"
           />
         </View>
+
         <Pressable style={styles.signupBtn} onPress={handleSignup}>
           {({ pressed }) => (
             <Text style={[styles.signupText, { opacity: pressed ? 0.6 : 1 }]}>Create</Text>
@@ -148,7 +126,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
-    marginTop:100,
+    marginTop: 100,
     backgroundColor: '#f2f2f2',
     alignItems: 'center',
     justifyContent: 'center',

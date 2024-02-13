@@ -1,4 +1,4 @@
-// Frontend: Profile Page
+
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Image } from 'react-native';
@@ -29,8 +29,7 @@ const ProfilePage = () => {
       const token = await AsyncStorage.getItem('token');
 
       if (!token) {
-        // Redirect to login if no token found
-        // You can customize this part based on your navigation setup
+        
         return;
       }
 
@@ -59,7 +58,7 @@ const ProfilePage = () => {
   }
 
   if (!profileData) {
-    // Handle the case where no profile data is available
+    
     return (
       <View style={styles.container}>
         <Text>Error fetching profile data</Text>
@@ -118,11 +117,11 @@ const ProfilePage = () => {
 />
 
 
-            {/* Add more fields based on your backend response */}
+           
           </Card.Content>
         </Card>
 
-        {/* Change Password Button */}
+     
         <TouchableOpacity onPress={goToPasswordPage} style={styles.button}>
           <Text style={styles.buttonText}>Change Password</Text>
         </TouchableOpacity>

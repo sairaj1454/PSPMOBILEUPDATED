@@ -11,7 +11,7 @@ const AdminSignupScreen = () => {
 
   const handleAdminSignup = () => {
     if (!email || !password) {
-      // Display an error message if email or password is empty
+    
       alert('Please enter both email and password.');
       return;
     }
@@ -20,8 +20,8 @@ const AdminSignupScreen = () => {
       .post(`${API_BASE_URL}/auth/adminsignup`, { username: email, password })
       .then((response) => {
         console.log(response.data.message);
-        // Navigate to the login screen or perform other actions as needed
-        navigation.navigate('Login'); // Example navigation to the login screen
+       
+        navigation.navigate('Login'); 
       })
       .catch((error) => {
         console.error(error);

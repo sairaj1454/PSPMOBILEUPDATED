@@ -36,7 +36,7 @@ const ViewResponses = ({ route }) => {
           const data = Object.keys(question.percentages).map((option) => ({
             name: option,
             percentage: question.percentages[option],
-            color: '#' + ((Math.random() * 0xffffff) << 0).toString(16), // Generate random color
+            color: '#' + ((Math.random() * 0xffffff) << 0).toString(16),
           }));
 
           return (
@@ -45,18 +45,19 @@ const ViewResponses = ({ route }) => {
                 <Card.Content>
                   <Title style={styles.questionText}>{question.question}</Title>
                   <PieChart
-                    data={data}
-                    width={300}
-                    height={200}
-                    chartConfig={{
-                      backgroundColor: '#1cc910',
-                      decimalPlaces: 2,
-                      color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                    }}
-                    accessor="percentage"
-                    backgroundColor="transparent"
-                    paddingLeft="15"
-                  />
+  data={data}
+  width={300}
+  height={200}
+  chartConfig={{
+    backgroundColor: 'transparent',
+    decimalPlaces: 2,
+    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+  }}
+  accessor="percentage"
+  backgroundColor="transparent"
+  paddingLeft="15"
+/>
+
                 </Card.Content>
               </Card>
             </Animatable.View>

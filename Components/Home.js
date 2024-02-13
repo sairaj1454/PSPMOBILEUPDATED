@@ -5,11 +5,11 @@ import {
   Text,
   TouchableWithoutFeedback,
   SafeAreaView,
-  ScrollView, // Import ScrollView component
+  ScrollView, 
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Card } from 'react-native-paper'; // Import Card component from react-native-paper
+import { Card } from 'react-native-paper'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Profile from './profile';
 import ImageSliderWithText from './imageslider';
@@ -62,7 +62,7 @@ export default function Home() {
         options={{
           tabBarLabel: 'Surveys',
           tabBarIcon: ({ color, size }) => {
-            return       <Icon name="clipboard-text" size={size} color={color} />; {/* Use "clipboard-text" for a survey icon */}
+            return       <Icon name="clipboard-text" size={size} color={color} />; 
             ;
           },
         }}
@@ -142,7 +142,7 @@ function HomeScreen() {
             </TouchableWithoutFeedback>
           </Card.Content>
         </Card>
-      {/* Wrap the additional content in a Card */}
+   
       <Card style={styles.additionalContentCard}>
         <Card.Content>
           <Text style={styles.additionalHeaderText}>Additional Information:</Text>

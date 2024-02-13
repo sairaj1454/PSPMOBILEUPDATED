@@ -17,7 +17,7 @@ const SuggestionsPage = () => {
     try {
       setSubmitting(true);
 
-      // Make a POST request to the backend with the suggestion content
+      
       const response = await fetch(`${API_BASE_URL}/submit-suggestion`, {
         method: 'POST',
         headers: {
@@ -27,9 +27,9 @@ const SuggestionsPage = () => {
       });
 
       if (response.ok) {
-        // Suggestion submitted successfully, clear the text input
+       
         setSuggestion('');
-        // Show the success modal
+      
         setModalVisible(true);
       } else {
         console.error('Error submitting suggestion');
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     padding: 20,
     width:'100%',
     borderRadius: 10,
-    elevation: 3, // Add elevation for a raised effect
+    elevation: 3, 
   },
   header: {
     fontSize: 24,
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   disabledButton: {
-    backgroundColor: 'gray', // Change the button color when disabled
+    backgroundColor: 'gray', 
   },
   buttonText: {
     color: 'white',

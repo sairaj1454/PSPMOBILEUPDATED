@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ImageBackground } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Import Ionicons (you can use a different icon library)
+import { Ionicons } from '@expo/vector-icons'; 
 
 const ImageSliderWithText = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -45,7 +45,7 @@ const ImageSliderWithText = () => {
       image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCUuPQjaXgJkMvIKFEl_ycT10dRqYGe52Hig&usqp=CAU',
       text: 'perficient',
     },
-    // Add more online image URLs and text as needed
+   
   ];
 
   return (
@@ -60,7 +60,7 @@ const ImageSliderWithText = () => {
         renderItem={({ item, index }) => (
           <View style={styles.slide}>
             <ImageBackground
-              source={{ uri: item.image }} // Use the 'uri' attribute for online images
+              source={{ uri: item.image }}
               style={styles.image}
             >
               <Text style={styles.imageText}>{item.text}</Text>

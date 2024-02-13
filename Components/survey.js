@@ -21,11 +21,16 @@ const SurveyPage = ({ route }) => {
   const [isModalVisible, setModalVisible] = useState(false);
   const navigation = useNavigation();
 
-  // Load previously saved answers on component mount
+  
   useEffect(() => {
     const loadSavedAnswers = async () => {
       try {
-        const savedAnswersString = await AsyncStorage.getItem('savedAnswers');
+        const userId = await AsyncStorage.getItem('userId');
+        if (!userId) {
+          console.error('User ID not found.');
+          return;
+        }
+        const savedAnswersString = await AsyncStorage.getItem(`savedAnswers_${userId}`);
         if (savedAnswersString) {
           const savedAnswers = JSON.parse(savedAnswersString);
           setSelectedOptions(savedAnswers);
@@ -38,11 +43,16 @@ const SurveyPage = ({ route }) => {
     loadSavedAnswers();
   }, []);
 
-  // Save answers whenever the selectedOptions change
+  
   useEffect(() => {
     const saveAnswers = async () => {
       try {
-        await AsyncStorage.setItem('savedAnswers', JSON.stringify(selectedOptions));
+        const userId = await AsyncStorage.getItem('userId');
+        if (!userId) {
+          console.error('User ID not found.');
+          return;
+        }
+        await AsyncStorage.setItem(`savedAnswers_${userId}`, JSON.stringify(selectedOptions));
       } catch (error) {
         console.error('Error saving answers:', error.message);
       }
@@ -67,7 +77,7 @@ const SurveyPage = ({ route }) => {
 
   const handleSubmit = async () => {
     try {
-      // Check if all questions are answered
+    
       const unansweredQuestions = survey.questions.filter((question, index) => {
         return (
           question.type === 'mcq' &&
@@ -101,8 +111,8 @@ const SurveyPage = ({ route }) => {
   
       setModalVisible(true);
 
-      // Clear saved answers upon successful submission
-      await AsyncStorage.removeItem('savedAnswers');
+     
+      await AsyncStorage.removeItem(`savedAnswers_${userId}`);
   
     } catch (error) {
       console.error('Error submitting survey:', error.message);

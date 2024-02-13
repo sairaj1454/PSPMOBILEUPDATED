@@ -10,7 +10,7 @@ function TopBaro() {
   const [username, setUsername] = useState('');
 
   useEffect(() => {
-    // Fetch and set the username from AsyncStorage
+  
     const fetchUsername = async () => {
       try {
         const storedUsername = await AsyncStorage.getItem('username');
@@ -30,8 +30,8 @@ function TopBaro() {
   };
 
   const handleChatWithAdmin = () => {
-    // Navigate to the chat screen with the admin
-    navigation.navigate('ChatScreen', { username: 'admin@g.com' }); // Replace 'admin' with the admin's username
+   
+    navigation.navigate('ChatScreen', { username: 'admin@g.com' }); 
   };
 
   const handleLogout = () => {
@@ -70,7 +70,7 @@ function TopBaro() {
         </View>
       </TouchableWithoutFeedback>
       <View style={styles.topBarIcons}>
-        {/* Change the onPress handler to navigate to the chat screen with the admin */}
+       
         <TouchableWithoutFeedback onPress={handleChatWithAdmin}>
           <Icon name="email" size={30} color="gray" style={styles.icon} />
         </TouchableWithoutFeedback>

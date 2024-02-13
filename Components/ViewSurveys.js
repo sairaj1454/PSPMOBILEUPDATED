@@ -1,12 +1,10 @@
-// Import necessary modules and libraries (already imported in your code)
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import { API_BASE_URL } from './config';
-import { Searchbar } from 'react-native-paper'; // Import Searchbar from react-native-paper
-
-// Import ViewResponses component
+import { Searchbar } from 'react-native-paper'; 
 import ViewResponses from './Viewresponse';
 
 const ViewSurveys = () => {
@@ -33,7 +31,7 @@ const ViewSurveys = () => {
   const handleDeleteSurvey = async (surveyId) => {
     try {
       await axios.delete(`${API_BASE_URL}/admin/surveys/${surveyId}`);
-      fetchSurveys(); // Refresh the list after deletion
+      fetchSurveys(); 
     } catch (error) {
       console.error('Error deleting survey:', error.message);
     }
@@ -78,7 +76,7 @@ const ViewSurveys = () => {
         placeholder="Search surveys..."
         onChangeText={(text) => setSearch(text)}
         value={search}
-        style={styles.searchBar} // Apply styles for consistency
+        style={styles.searchBar} 
       />
       {surveys.length === 0 ? (
         <Text>No surveys available</Text>
